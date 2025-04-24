@@ -1,0 +1,14 @@
+# Ignore everything except the necessary files
+test
+.gitignore
+.git
+.prettierrc
+Dockerfile
+# !package.json
+# !package-lock.json
+node_modules
+RESDME.md
+# !src
+# !tsconfig.json
+# !tsconfig.build.json
+# !.env
