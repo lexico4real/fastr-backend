@@ -6,6 +6,7 @@ import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getTypeOrmConfig } from 'config/db';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { getTypeOrmConfig } from 'config/db';
         port: Number(process.env.REDIS_DB_PORT),
         password: process.env.REDIS_DB_AUTH,
       },
-    })
+    }), CacheModule
   ],
   controllers: [AppController],
   providers: [AppService],
