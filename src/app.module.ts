@@ -7,6 +7,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getTypeOrmConfig } from 'config/db';
 import { CacheModule } from './cache/cache.module';
+import { AuthModule } from './auth/auth.module';
+import { EmailModule } from './email/email.module';
+import { OtpModule } from './otp/otp.module';
 
 @Module({
   imports: [
@@ -23,7 +26,7 @@ import { CacheModule } from './cache/cache.module';
         port: Number(process.env.REDIS_DB_PORT),
         password: process.env.REDIS_DB_AUTH,
       },
-    }), CacheModule
+    }), CacheModule, AuthModule, EmailModule, OtpModule
   ],
   controllers: [AppController],
   providers: [AppService],
