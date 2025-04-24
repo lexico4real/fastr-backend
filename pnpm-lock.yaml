@@ -46,6 +46,7 @@ specifiers:
   config: ^3.3.12
   cookie-parser: ^1.4.7
   cookie-session: ^2.1.0
+  cron: ^4.3.0
   eslint: ^9.25.1
   eslint-config-prettier: ^10.1.2
   eslint-plugin-prettier: ^5.2.6
@@ -106,6 +107,7 @@ dependencies:
   config: 3.3.12
   cookie-parser: 1.4.7
   cookie-session: 2.1.0
+  cron: 4.3.0
   express: 5.1.0
   ioredis: 5.6.1
   js-yaml: 4.1.0
@@ -1952,7 +1954,6 @@ packages:
 
   /@types/luxon/3.6.2:
     resolution: {integrity: sha512-R/BdP7OxEMc44l2Ex5lSXHoIXTB2JLNa3y2QISIbr58U/YcsffyQrYW//hZSdrfxrjRZj3GcUoxMPGdO8gSYuw==}
-    dev: true
 
   /@types/methods/1.1.4:
     resolution: {integrity: sha512-ymXWVrDiCxTBE3+RIrrP533E70eA+9qu7zdWoHuOmGujkYtzf4HQF96b8nwHLqhuf4ykX61IGRIB38CC6/sImQ==}
@@ -3341,7 +3342,6 @@ packages:
     dependencies:
       '@types/luxon': 3.6.2
       luxon: 3.6.1
-    dev: true
 
   /cross-argv/2.0.0:
     resolution: {integrity: sha512-YIaY9TR5Nxeb8SMdtrU8asWVM4jqJDNDYlKV21LxtYcfNJhp1kEsgSa6qXwXgzN0WQWGODps0+TlGp2xQSHwOg==}
@@ -7298,7 +7298,6 @@ packages:
       - '@swc/core'
       - better-sqlite3
       - debug
-      - encoding
       - esbuild
       - hdb-pool
       - mongodb
