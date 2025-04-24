@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: fastr-backend
+    ports:
+      - '3000:3000'
+    depends_on:
+      - fastr-db
+      - fastr-cache-house
+    env_file:
+      - .env
+    networks:
+      - fastr-network
+    restart: always
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run start:dev
+
+  fastr-db:
+    image: postgres:15
+    container_name: fastr-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - fastr-network
+    command: ["postgres", "-c", "listen_addresses=*"]
+
+  fastr-cache-house:
+    image: redis:7
+    container_name: fastr-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    networks:
+      - fastr-network
+
+networks:
+  fastr-network:
+
+volumes:
+  db-data:
