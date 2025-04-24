@@ -1,0 +1,9 @@
+db:
+  host: ${DATABASE_HOST}
+  username: ${DATABASE_USERNAME}
+  password: ${DATABASE_PASSWORD}
+  synchronize: true
+  typeOrmSync: true
+
+jwt:
+  secret: ${JWT_SECRET}

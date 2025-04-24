@@ -1,0 +1,11 @@
+server:
+  port: 3000
+
+db:
+  type: 'postgres'
+  port: 5432
+  database: 'fastr-db'
+
+jwt:
+  expiresIn: '10h'
+
