@@ -25,27 +25,12 @@ import { AuthCredentialsDto } from './dto/auth-credential.dto';
 export class AuthController {
   constructor(private authService: AuthService) { }
 
-  @Post('register')
-  @UseGuards(AuthGuard())
-  @ApiBearerAuth('token')
-  createBankStaff(@Body() createUserDto: CreateUserDto): Promise<void> {
-    return this.authService.signUp(createUserDto);
-  }
-
-  @Post('customer')
-  @ApiBearerAuth('token')
-  createCustomer(@Body() createUserDto: CreateUserDto): Promise<void> {
-    createUserDto.role = Role.TALENT;
-    return this.authService.signUp(createUserDto);
-  }
-
   @HttpCode(200)
   @Post('otp')
   getLoginOTP(
-    @Body() authCredentialsDto: AuthCredentialsDto,
-    @Req() req: Request,
+    @Body() authCredentialsDto: AuthCredentialsDto
   ) {
-    return this.authService.getLoginOTP(authCredentialsDto, req.user);
+    return this.authService.getLoginOTP(authCredentialsDto);
   }
 
   @HttpCode(200)
@@ -82,5 +67,24 @@ export class AuthController {
   @Post('role/privilege')
   async createPrivilege(@Body() accessDto: AccessDto) {
     return await this.authService.createPrivilege(accessDto);
+  }
+
+  @Post('register/staff')
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth('token')
+  registerStaff(@Body() createUserDto: CreateUserDto): Promise<void> {
+    return this.authService.signUp(createUserDto);
+  }
+
+  @Post('register/talent')
+  @ApiBearerAuth('token')
+  registerTalent(@Body() createUserDto: CreateUserDto): Promise<void> {
+    createUserDto.role = Role.TALENT;
+    return this.authService.signUp(createUserDto);
+  }
+
+  @Get('talent/confirm')
+  async confirmAccount(@Query('token') token: string): Promise<{message: string}> {
+    return this.authService.confirmAccount(token);
   }
 }

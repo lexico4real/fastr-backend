@@ -2,10 +2,6 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  InternalServerErrorException,
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';

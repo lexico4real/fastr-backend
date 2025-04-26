@@ -1,4 +1,3 @@
-// privilege.guard.ts
 import {
   CanActivate,
   ExecutionContext,

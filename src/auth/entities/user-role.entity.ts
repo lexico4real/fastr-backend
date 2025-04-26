@@ -1,7 +1,7 @@
 import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 import { User } from './user.entity';
 import { BaseEntity } from 'src/base.enttity';
-import { UserPrivilege } from './user-privilege';
+import { UserPrivilege } from './user-privilege.entity';
 
 @Entity()
 export class UserRole extends BaseEntity {

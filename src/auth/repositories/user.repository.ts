@@ -4,14 +4,25 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { EntityRepository, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import * as bcrypt from 'bcryptjs';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { isEmail } from 'class-validator';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AccountStatus } from 'common/enums/account-status';
 
-@EntityRepository(User)
 export class UserRepository extends Repository<User> {
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {
+    super(
+      userRepository.target,
+      userRepository.manager,
+      userRepository.queryRunner,
+    );
+  }
   async registerAccount(createUserDto: CreateUserDto): Promise<User> {
     const { email, password } = createUserDto;
 
@@ -37,6 +48,23 @@ export class UserRepository extends Repository<User> {
         throw new InternalServerErrorException();
       }
     }
+  }
+
+  async confirmAccount(payload: any): Promise<{ message: string, user: User }> {
+    
+    console.log(payload)
+
+    const user = await this.findOne({ where: { email: payload.email } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.isConfirmed = true;
+    user.accountStatus = AccountStatus.ACTIVE;
+    await this.save(user);
+
+    return { message: 'Account confirmed successfully!', user };
   }
 
   async getUserByEmail(email: string): Promise<User> {

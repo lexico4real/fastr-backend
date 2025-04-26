@@ -29,7 +29,7 @@ export class EmailService {
     const { to, subject, text, html } = sendEmailDto;
     try {
       const mailOptions = {
-        from: `"Empresos" <${process.env.EMAIL_USER}>`,
+        from: `"Fastr" <${process.env.EMAIL_USER}>`,
         to,
         subject,
         text,

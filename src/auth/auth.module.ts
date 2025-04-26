@@ -14,6 +14,9 @@ import { CookieSessionModule } from 'nestjs-cookie-session';
 import { UserRepository } from './repositories/user.repository';
 import { JwtStrategy } from './jwt-strategy';
 import { RolesGuard } from './guards/roles.guard';
+import { User } from './entities/user.entity';
+import { UserPrivilege } from './entities/user-privilege.entity';
+import { UserRole } from './entities/user-role.entity';
 
 @Module({
   imports: [
@@ -30,9 +33,9 @@ import { RolesGuard } from './guards/roles.guard';
       }),
     }),
     TypeOrmModule.forFeature([
-      UserRepository,
-      UserPrivilegeRepository,
-      UserRoleRepository,
+      User,
+      UserPrivilege,
+      UserRole,
     ]),
     CookieSessionModule.forRoot({
       session: { secret: 'top secret', maxAge: 60 * 60 * 1000 * 8 },
@@ -52,8 +55,11 @@ import { RolesGuard } from './guards/roles.guard';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    UserRepository,
+    UserPrivilegeRepository,
+    UserRoleRepository,
   ],
   controllers: [AuthController],
-  exports: [JwtStrategy, PassportModule, JwtModule, RolesGuard, AuthService],
+  exports: [JwtStrategy, PassportModule, JwtModule, RolesGuard, AuthService, TypeOrmModule],
 })
 export class AuthModule {}

@@ -8,7 +8,7 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { UserRole } from './user-role';
+import { UserRole } from './user-role.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -25,7 +25,7 @@ export class User extends BaseEntity {
   lastName: string;
 
   @Index('user_account_status_idx')
-  @Column({ type: 'enum', enum: AccountStatus, default: AccountStatus.ACTIVE })
+  @Column({ type: 'enum', enum: AccountStatus, default: AccountStatus.INACTIVE })
   accountStatus: AccountStatus;
 
   @Column({ nullable: true })
@@ -33,6 +33,9 @@ export class User extends BaseEntity {
 
   @Column({ unique: true })
   phoneNumber: string;
+
+  @Column({ default: false })
+  isConfirmed: boolean;
 
   @Column({ default: 0 })
   failedLoginAttempts: number;

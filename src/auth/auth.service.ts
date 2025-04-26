@@ -6,6 +6,7 @@ import {
   InternalServerErrorException,
   BadRequestException,
   HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -41,21 +42,46 @@ export class AuthService {
   async signUp(createUserDto: CreateUserDto): Promise<void> {
     const user = await this.usersRepository.registerAccount(createUserDto);
 
-    await this.emailService.sendMail({
-      to: user.email,
-      subject: 'New Account',
-      text: `Welcome ${user.firstName}! This is a confirmation of the New Account You opened with us.`,
-    });
+    const token = this.generateConfirmationToken(user);
+
+    await this.sendConfirmationEmail(user.email, token);
   }
 
-  async getLoginOTP(authCredentialsDto: AuthCredentialsDto, userData: any) {
+  async confirmAccount(token: string): Promise<{ message: string }> {
+    const payload = this.verifyConfirmationToken(token);
+
+    const result = await this.usersRepository.confirmAccount(payload)
+
+    await this.emailService.sendMail({
+      to: result.user.email,
+      subject: 'New Account',
+      text: '',
+      html: `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <img src="https://via.placeholder.com/150x50?text=Company+Logo" alt="Company Logo" style="height: 50px;">
+      </div>
+      <h2 style="color: #0056b3;">Welcome, ${result.user.firstName}!</h2>
+      <p>Thank you for opening a new account with us. We're thrilled to have you on board and look forward to supporting your journey.</p>
+      <p>If you have any questions, feel free to reach out to our support team at any time.</p>
+      <p style="margin-top: 30px;">Best regards,<br><strong>The Team</strong></p>
+    </div>
+  `,
+    });
+    delete result.user;
+    return result;
+  }
+
+  async getLoginOTP(authCredentialsDto: AuthCredentialsDto) {
     const { email, password } = authCredentialsDto;
     const normalizedEmail = email.toLowerCase();
-    let user: User;
-    if (!userData) {
-      user = await this.usersRepository.getUserByEmail(normalizedEmail);
-    } else {
-      user = userData;
+
+    const user = await this.usersRepository.getUserByEmail(normalizedEmail);
+
+    if (!user.isConfirmed) {
+      throw new ForbiddenException(
+        'This account is yet to be confirmed. Request a confirmation email.',
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -71,9 +97,7 @@ export class AuthService {
     const { phoneNumber, email: _email } = user;
 
     const token = await this.otpService.generateOtp(
-      {
-        phoneNumber,
-      },
+      { phoneNumber },
       user,
     );
 
@@ -103,6 +127,12 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(
         'Wrong email/password. Please check your login credentials',
+      );
+    }
+
+    if (!user.isConfirmed) {
+      throw new ForbiddenException(
+        'This account is yet to be confirmed. Request a confirmation email.',
       );
     }
 
@@ -185,5 +215,38 @@ export class AuthService {
       throw new BadRequestException('This is not a valid ID')
     }
     return await this.usersRepository.findUserById(id);
+  }
+
+  private verifyConfirmationToken(token: string): any {
+    try {
+      return this.jwtService.verify(token, {
+        secret: process.env.EMAIL_CONFIRMATION_SECRET,
+      });
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired confirmation token');
+    }
+  }
+
+  private generateConfirmationToken(user: User): string {
+    const payload = { email: user.email };
+    return this.jwtService.sign(payload, {
+      secret: process.env.EMAIL_CONFIRMATION_SECRET,
+      expiresIn: '1d',
+    });
+  }
+
+  async sendConfirmationEmail(email: string, token: string): Promise<void> {
+    const confirmationUrl = `http://localhost:3000/api/v1/users/talent/confirm?token=${token}`;
+
+    await this.emailService.sendMail({
+      to: email,
+      subject: 'Confirm your account',
+      text: '',
+      html: `
+        <p>Hi,</p>
+        <p>Please click the link below to confirm your account:</p>
+        <a href="${confirmationUrl}">${confirmationUrl}</a>
+      `,
+    })
   }
 }
