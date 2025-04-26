@@ -23,7 +23,7 @@ export class UserRepository extends Repository<User> {
       userRepository.queryRunner,
     );
   }
-  async registerAccount(createUserDto: CreateUserDto): Promise<User> {
+  async registerAccount(createUserDto: CreateUserDto, role: any): Promise<User> {
     const { email, password } = createUserDto;
 
     const salt = await bcrypt.genSalt();
@@ -33,6 +33,7 @@ export class UserRepository extends Repository<User> {
       ...createUserDto,
       email: email.toLowerCase(),
       password: hashedPassword,
+      userRole: role || null,
     });
 
     try {
@@ -52,8 +53,6 @@ export class UserRepository extends Repository<User> {
 
   async confirmAccount(payload: any): Promise<{ message: string, user: User }> {
     
-    console.log(payload)
-
     const user = await this.findOne({ where: { email: payload.email } });
 
     if (!user) {
@@ -71,7 +70,10 @@ export class UserRepository extends Repository<User> {
     if (!isEmail(email)) {
       throw new BadRequestException('This is not a valid email.');
     }
-    const user = await this.findOne({ where: { email } });
+    const user = await this.findOne({
+      where: { email },
+      relations: ['userRole', 'userRole.userPrivileges']
+    });
 
     if (!user) {
       throw new NotFoundException(
@@ -85,7 +87,7 @@ export class UserRepository extends Repository<User> {
     try {
       return await this.findOne({
         where: { id },
-        relations: ['roles'],
+        relations: ['userRole', 'userRole.privileges'],
       });
     } catch (error) {
       throw new Error('Something went wrong')

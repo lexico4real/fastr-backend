@@ -7,6 +7,7 @@ import {
   BadRequestException,
   HttpStatus,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -24,6 +25,9 @@ import { generatePagination } from 'common/utils/pagination';
 import { JwtPayload } from './jwt-payload-interface';
 import { OtpService } from 'src/otp/otp.service';
 import { isUUID } from 'class-validator';
+import { v4 as uuidv4 } from 'uuid';
+import { CacheService } from 'src/cache/cache.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -37,10 +41,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly otpService: OtpService,
+    private readonly cacheService: CacheService
   ) { }
 
   async signUp(createUserDto: CreateUserDto): Promise<void> {
-    const user = await this.usersRepository.registerAccount(createUserDto);
+    const { role } = createUserDto;
+    const roleData = await this.userRoleRepository.getRoleByName(role);
+
+    const user = await this.usersRepository.registerAccount(createUserDto, roleData);
 
     const token = this.generateConfirmationToken(user);
 
@@ -147,7 +155,7 @@ export class AuthService {
 
     const payload: JwtPayload = {
       email: normalizedEmail,
-      roles: user.userRole,
+      role: user.userRole,
     };
 
     const { otpIsValid } = await this.otpService.validateOtp(
@@ -167,7 +175,60 @@ export class AuthService {
       ...user,
     };
 
+    await this.cacheService.set(`session:${user.id}:${accessToken}`, 'active', 60 * 60 * 24);
+
     return { accessToken, ...user };
+  }
+
+  async logout(userId: string, token: string) {
+    if (!token) {
+      throw new Error('No token provided');
+    }
+
+    await this.cacheService.delete(`session:${userId}:${token}`);
+
+    return { message: 'Successfully logged out' };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const { email } = forgotPasswordDto;
+
+    const user = await this.usersRepository.getUserByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const resetToken = uuidv4();
+
+    await this.cacheService.set(`reset-password:${user.id}`, resetToken, 60 * 15);
+
+    const resetLink = `http://localhost:3000/api/v1/reset-password?token=${resetToken}&userId=${user.id}`;
+
+    // const templatePath = join(__dirname, 'common/templates', 'templates', 'reset-password.html');
+    // let html = readFileSync(templatePath, 'utf8');
+    // html = html.replace('{{RESET_LINK}}', resetLink);
+
+    const html = `
+      <html>
+        <body>
+          <h2>Password Reset Request</h2>
+          <p>Click below to reset your password:</p>
+          <a href="${resetLink}" style="padding: 10px 20px; background-color:#0056b3); color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
+          <p>If you did not request this, please ignore this email.</p>
+        </body>
+      </html>
+      `
+
+    await this.emailService.sendMail({
+      to: user.email,
+      subject: 'Password Reset',
+      text: '',
+      html,
+    })
+
+    return {
+      message: 'Password reset link has been sent to your email (simulated)',
+    };
   }
 
   async getAllUsers(
@@ -235,7 +296,7 @@ export class AuthService {
     });
   }
 
-  async sendConfirmationEmail(email: string, token: string): Promise<void> {
+  private async sendConfirmationEmail(email: string, token: string): Promise<void> {
     const confirmationUrl = `http://localhost:3000/api/v1/users/talent/confirm?token=${token}`;
 
     await this.emailService.sendMail({

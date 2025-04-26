@@ -10,7 +10,7 @@ export default class ClusterConfig {
     if (process.env.NODE_ENV !== 'development') {
       try {
         if (cluster.isPrimary) {
-          await logger.log(
+          logger.log(
             'cluster',
             'info',
             `Master ${process.pid} is running`,

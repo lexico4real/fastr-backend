@@ -88,15 +88,6 @@ export class CacheService {
     }
   }
 
-  async del(key: string): Promise<any> {
-    try {
-      return await this.redisClient.del(key);
-    } catch (e) {
-      this.logger.log(this.logName, 'error', e, this.logFileName);
-      return null;
-    }
-  }
-
   async expire(key: string, duration: number): Promise<any> {
     try {
       return await this.redisClient.expire(key, duration);

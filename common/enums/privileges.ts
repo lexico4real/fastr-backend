@@ -5,4 +5,5 @@ export enum PrivilegesConstant {
   CAN_UPDATE_PROFILE = 'can_update_profile',
   CAN_CREATE_ROLE = 'can_create_role',
   CAN_CREATE_PRIVILEGE = 'can_create_privilege',
+  CAN_VIEW_USERS = 'can_view_users'
 }

@@ -19,7 +19,8 @@ export class PrivilegesGuard implements CanActivate {
     if (!requiredPrivileges || requiredPrivileges.length === 0) return true;
 
     const { user } = context.switchToHttp().getRequest();
-    const userPrivileges = user?.role?.privileges?.map((privilege: { name: string }) => privilege.name) || [];
+
+    const userPrivileges = user?.userRole?.userPrivileges?.map((privilege: { name: string }) => privilege.name) || [];
 
     const hasPrivilege = requiredPrivileges.every(privilege => userPrivileges.includes(privilege));
 

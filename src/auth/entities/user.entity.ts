@@ -6,7 +6,6 @@ import {
   Index,
   ManyToOne,
   JoinColumn,
-  OneToMany,
 } from 'typeorm';
 import { UserRole } from './user-role.entity';
 

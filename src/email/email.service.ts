@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { SendEmailDto } from './email.dto';
-// import { Transporter } from 'nodemailer';
+import Logger from 'config/logger';
 
 @Injectable()
 export class EmailService {
   private transporter: nodemailer.Transporter;
+  private logger = new Logger();
 
   constructor() {
     const { EMAIL_USER, EMAIL_PASS, EMAIL_SERVER } = process.env;
@@ -40,6 +41,12 @@ export class EmailService {
       return info;
     } catch (error) {
       console.error('Email sending failed:', error);
+      this.logger.log(
+        'cluster',
+        'info',
+        `Master ${process.pid} is running`,
+        'cluster',
+      );
       throw error;
     }
   }

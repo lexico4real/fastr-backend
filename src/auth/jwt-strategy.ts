@@ -27,14 +27,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const { email } = payload;
     const user = await this.usersRepository.findOne({
       where: { email },
-      relations: ['userRole', 'userRole.user_privileges'],
+      relations: ['userRole', 'userRole.userPrivileges'],
     });
 
     if (!user) {
       throw new UnauthorizedException();
     }
-
-    console.log(user)
 
     return user;
   }

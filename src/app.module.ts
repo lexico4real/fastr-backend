@@ -10,6 +10,7 @@ import { CacheModule } from './cache/cache.module';
 import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
 import { OtpModule } from './otp/otp.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { OtpModule } from './otp/otp.module';
         port: Number(process.env.REDIS_DB_PORT),
         password: process.env.REDIS_DB_AUTH,
       },
-    }), CacheModule, AuthModule, EmailModule, OtpModule
+    }), CacheModule, AuthModule, EmailModule, OtpModule, SeedModule
   ],
   controllers: [AppController],
   providers: [AppService],

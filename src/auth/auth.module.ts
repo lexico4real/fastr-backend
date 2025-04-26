@@ -17,10 +17,12 @@ import { RolesGuard } from './guards/roles.guard';
 import { User } from './entities/user.entity';
 import { UserPrivilege } from './entities/user-privilege.entity';
 import { UserRole } from './entities/user-role.entity';
+import { CacheModule } from 'src/cache/cache.module';
 
 @Module({
   imports: [
     ConfigModule,
+    CacheModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

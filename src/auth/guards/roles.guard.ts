@@ -19,8 +19,8 @@ export class RolesGuard implements CanActivate {
     if (!requiredRole) return true;
 
     const { user } = context.switchToHttp().getRequest();
-    if (user.role?.name !== requiredRole) {
-      throw new ForbiddenException('Access denied: wrong role');
+    if (user.userRole?.name !== requiredRole) {
+      throw new ForbiddenException('Access denied: role elevation required');
     }
 
     return true;

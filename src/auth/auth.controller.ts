@@ -14,7 +14,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AccessDto } from './dto/access.dto';
 import { RolesConstant } from 'common/enums/roles';
@@ -22,9 +22,10 @@ import { AuthCredentialsDto } from './dto/auth-credential.dto';
 import { Privileges } from './decorators/privileges.decorator';
 import { PrivilegesGuard } from './guards/privileges.guard';
 import { PrivilegesConstant } from 'common/enums/privileges';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
-@ApiTags('users')
-@Controller('users')
+@ApiTags('auth')
+@Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) { }
 
@@ -45,8 +46,18 @@ export class AuthController {
     return this.authService.signIn(authCredentialsDto, session);
   }
 
-  @Get()
   @UseGuards(AuthGuard())
+  @Post('logout')
+  async logout(@Req() req: Request) {
+    const userId = req.user['id'];
+    const token = req.headers.authorization?.split(' ')[1];
+
+    return await this.authService.logout(userId, token);
+  }
+
+  @Get('users')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
   @ApiBearerAuth('token')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
@@ -60,28 +71,37 @@ export class AuthController {
     return this.authService.getAllUsers(page, perPage, search, req);
   }
 
-  @UseGuards(AuthGuard())
-  @Post('role')
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return await this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('user/role')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
+  @ApiBearerAuth('token')
   async createRole(@Body() accessDto: AccessDto) {
     return await this.authService.createRole(accessDto);
   }
 
-  @UseGuards(AuthGuard())
   @Post('role/privilege')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @ApiBearerAuth('token')
+  @Privileges(PrivilegesConstant.CAN_CREATE_PRIVILEGE)
   async createPrivilege(@Body() accessDto: AccessDto) {
     return await this.authService.createPrivilege(accessDto);
   }
 
   @Post('register/staff')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_STAFF)
+  @Privileges(PrivilegesConstant.CAN_VIEW_USERS)
+  @ApiBearerAuth('token')
   @ApiBearerAuth('token')
   registerStaff(@Body() createUserDto: CreateUserDto): Promise<void> {
     return this.authService.signUp(createUserDto);
   }
 
   @Post('register/talent')
-  @ApiBearerAuth('token')
   registerTalent(@Body() createUserDto: CreateUserDto): Promise<void> {
     createUserDto.role = RolesConstant.TALENT;
     return this.authService.signUp(createUserDto);
