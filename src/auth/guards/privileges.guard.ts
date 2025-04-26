@@ -5,25 +5,23 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { PRIVILEGE_KEY } from '../decorators/privileges.decorator';
+import { PRIVILEGES_KEY } from '../decorators/privileges.decorator';
 
 @Injectable()
-export class PrivilegeGuard implements CanActivate {
+export class PrivilegesGuard implements CanActivate {
   constructor(private reflector: Reflector) { }
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredPrivileges = this.reflector.get<string[]>(
-      PRIVILEGE_KEY,
+    const requiredPrivileges = this.reflector.getAllAndOverride<string[]>(PRIVILEGES_KEY, [
       context.getHandler(),
-    );
+      context.getClass(),
+    ]);
     if (!requiredPrivileges || requiredPrivileges.length === 0) return true;
 
     const { user } = context.switchToHttp().getRequest();
-    const userPrivileges = user.role?.privileges?.map((p: { name: any }) => p.name) ?? [];
+    const userPrivileges = user?.role?.privileges?.map((privilege: { name: string }) => privilege.name) || [];
 
-    const hasPrivilege = requiredPrivileges.every((p) =>
-      userPrivileges.includes(p),
-    );
+    const hasPrivilege = requiredPrivileges.every(privilege => userPrivileges.includes(privilege));
 
     if (!hasPrivilege) {
       throw new ForbiddenException('Access denied: insufficient privileges');

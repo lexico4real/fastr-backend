@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AccountStatus } from 'common/enums/account-status';
-import { Role } from 'common/enums/roles';
+import { RolesConstant } from 'common/enums/roles';
 
 export class CreateUserDto {
   @ApiProperty()
@@ -44,8 +44,8 @@ export class CreateUserDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsEnum(Role)
-  role?: Role;
+  @IsEnum(RolesConstant)
+  role?: RolesConstant;
 
   @ApiProperty()
   @MinLength(15)

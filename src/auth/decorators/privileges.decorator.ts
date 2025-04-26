@@ -1,4 +1,4 @@
 import { SetMetadata } from '@nestjs/common';
-export const PRIVILEGE_KEY = 'privileges';
+export const PRIVILEGES_KEY = 'privileges';
 export const Privileges = (...privileges: string[]) =>
-  SetMetadata(PRIVILEGE_KEY, privileges);
+  SetMetadata(PRIVILEGES_KEY, privileges);

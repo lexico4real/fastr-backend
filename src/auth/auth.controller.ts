@@ -17,8 +17,11 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AccessDto } from './dto/access.dto';
-import { Role } from 'common/enums/roles';
+import { RolesConstant } from 'common/enums/roles';
 import { AuthCredentialsDto } from './dto/auth-credential.dto';
+import { Privileges } from './decorators/privileges.decorator';
+import { PrivilegesGuard } from './guards/privileges.guard';
+import { PrivilegesConstant } from 'common/enums/privileges';
 
 @ApiTags('users')
 @Controller('users')
@@ -70,7 +73,8 @@ export class AuthController {
   }
 
   @Post('register/staff')
-  @UseGuards(AuthGuard())
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_CREATE_STAFF)
   @ApiBearerAuth('token')
   registerStaff(@Body() createUserDto: CreateUserDto): Promise<void> {
     return this.authService.signUp(createUserDto);
@@ -79,7 +83,7 @@ export class AuthController {
   @Post('register/talent')
   @ApiBearerAuth('token')
   registerTalent(@Body() createUserDto: CreateUserDto): Promise<void> {
-    createUserDto.role = Role.TALENT;
+    createUserDto.role = RolesConstant.TALENT;
     return this.authService.signUp(createUserDto);
   }
 
