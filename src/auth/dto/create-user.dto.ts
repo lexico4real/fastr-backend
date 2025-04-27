@@ -35,6 +35,7 @@ export class CreateUserDto {
 
   @ApiProperty()
   @IsString()
+  @IsNotEmpty()
   phoneNumber: string;
 
   @ApiPropertyOptional()
