@@ -27,7 +27,7 @@ export class User extends BaseEntity {
   @Column({ type: 'enum', enum: AccountStatus, default: AccountStatus.INACTIVE })
   accountStatus: AccountStatus;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'bytea' })
   photo: string;
 
   @Column({ unique: true })

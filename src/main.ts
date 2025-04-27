@@ -9,6 +9,7 @@ import SwaggerConfig from 'config/api-doc';
 import { TransformInterceptor } from 'config/interceptors/transform.interceptor';
 import { SeedService } from './seed/seed.service';
 import { TrimInputPipe } from 'config/validations';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const cluster = new ClusterConfig();
@@ -24,6 +25,8 @@ async function bootstrap() {
   app.setGlobalPrefix('/api/v1');
   await doc.set(app);
   app.use(compression());
+  app.use(json({ limit: '100mb' }));
+  app.use(urlencoded({ extended: true, limit: '100mb' }))
   app.useGlobalInterceptors(new TransformInterceptor());
   app.enableShutdownHooks();
   if (process.env.NODE_ENV !== 'production') {

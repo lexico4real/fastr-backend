@@ -11,6 +11,7 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { isEmail } from 'class-validator';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AccountStatus } from 'common/enums/account-status';
+import { UpdateUserDto } from '../dto/update-user.dto';
 
 export class UserRepository extends Repository<User> {
   constructor(
@@ -52,7 +53,7 @@ export class UserRepository extends Repository<User> {
   }
 
   async confirmAccount(payload: any): Promise<{ message: string, user: User }> {
-    
+
     const user = await this.findOne({ where: { email: payload.email } });
 
     if (!user) {
@@ -91,6 +92,25 @@ export class UserRepository extends Repository<User> {
       });
     } catch (error) {
       throw new Error('Something went wrong')
+    }
+  }
+
+  async saveUpdate(id: string, dto: UpdateUserDto) {
+    const { phoneNumber, photo } = dto;
+    try {
+      const result = await this.createQueryBuilder()
+        .update(User)
+        .set({
+          phoneNumber,
+          photo,
+          updatedAt: new Date(),
+        })
+        .where('id = :id', { id })
+        .execute();
+      console.log(result)
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Failed to update user');
     }
   }
 }

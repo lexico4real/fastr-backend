@@ -29,6 +29,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { CacheService } from 'src/cache/cache.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { NewPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -241,7 +242,7 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
-    const user = await this.usersRepository.findUserById(userId );
+    const user = await this.usersRepository.findUserById(userId);
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -336,5 +337,16 @@ export class AuthService {
         <a href="${confirmationUrl}">${confirmationUrl}</a>
       `,
     })
+  }
+
+  async saveUpdate(id: string, dto: UpdateUserDto) {
+    if (dto.photo) {
+      const buffer = Buffer.from(dto.photo, 'base64');
+      dto.photo = buffer;
+    }
+    await this.usersRepository.saveUpdate(id, dto);
+    return {
+      message: 'User data updated successfully'
+    }
   }
 }
