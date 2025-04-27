@@ -87,7 +87,7 @@ export class UserRepository extends Repository<User> {
     try {
       return await this.findOne({
         where: { id },
-        relations: ['userRole', 'userRole.privileges'],
+        relations: ['userRole', 'userRole.userPrivileges'],
       });
     } catch (error) {
       throw new Error('Something went wrong')

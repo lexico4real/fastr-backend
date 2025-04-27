@@ -28,6 +28,7 @@ import { isUUID } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
 import { CacheService } from 'src/cache/cache.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { NewPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -202,7 +203,7 @@ export class AuthService {
 
     await this.cacheService.set(`reset-password:${user.id}`, resetToken, 60 * 15);
 
-    const resetLink = `http://localhost:3000/api/v1/reset-password?token=${resetToken}&userId=${user.id}`;
+    const resetLink = `http://localhost:3000/api/v1/auth/reset-password?token=${resetToken}&userId=${user.id}`;
 
     // const templatePath = join(__dirname, 'common/templates', 'templates', 'reset-password.html');
     // let html = readFileSync(templatePath, 'utf8');
@@ -227,7 +228,33 @@ export class AuthService {
     })
 
     return {
-      message: 'Password reset link has been sent to your email (simulated)',
+      message: 'Password reset link has been sent to your email',
+    };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto, newPasswordDto: NewPasswordDto) {
+    const { userId, token } = resetPasswordDto;
+    const { newPassword } = newPasswordDto;
+
+    const storedToken = await this.cacheService.get(`reset-password:${userId}`);
+    if (!storedToken || storedToken !== token) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const user = await this.usersRepository.findUserById(userId );
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    await this.usersRepository.save(user);
+
+    await this.cacheService.delete(`reset-password:${userId}`);
+
+    return {
+      message: 'Password has been reset successfully',
     };
   }
 
@@ -297,7 +324,7 @@ export class AuthService {
   }
 
   private async sendConfirmationEmail(email: string, token: string): Promise<void> {
-    const confirmationUrl = `http://localhost:3000/api/v1/users/talent/confirm?token=${token}`;
+    const confirmationUrl = `http://localhost:3000/api/v1/auth/talent/confirm?token=${token}`;
 
     await this.emailService.sendMail({
       to: email,

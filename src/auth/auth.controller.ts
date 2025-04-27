@@ -23,6 +23,7 @@ import { Privileges } from './decorators/privileges.decorator';
 import { PrivilegesGuard } from './guards/privileges.guard';
 import { PrivilegesConstant } from 'common/enums/privileges';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { NewPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -76,6 +77,11 @@ export class AuthController {
     return await this.authService.forgotPassword(forgotPasswordDto);
   }
 
+  @Post('reset-password')
+  async resetPassword(@Body() newPasswordDto: NewPasswordDto, @Query() resetPasswordDto: ResetPasswordDto) {
+    return await this.authService.resetPassword(resetPasswordDto, newPasswordDto);
+  }
+
   @Post('user/role')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
@@ -108,7 +114,7 @@ export class AuthController {
   }
 
   @Get('talent/confirm')
-  async confirmAccount(@Query('token') token: string): Promise<{message: string}> {
+  async confirmAccount(@Query('token') token: string): Promise<{ message: string }> {
     return this.authService.confirmAccount(token);
   }
 }
