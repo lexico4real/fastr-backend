@@ -6,18 +6,18 @@ import * as bcrypt from 'bcryptjs';
 import { UserRole } from 'src/auth/entities/user-role.entity';
 import { User } from 'src/auth/entities/user.entity';
 import { UserPrivilege } from 'src/auth/entities/user-privilege.entity';
+import { PrivilegesConstant } from 'common/enums/privileges';
 
 @Injectable()
 export class SeedService {
   private readonly logger = new Logger(SeedService.name);
 
-  constructor(
-    @InjectDataSource() private readonly dataSource: DataSource,
-  ) { }
+  constructor(@InjectDataSource() private readonly dataSource: DataSource) { }
 
   async seed() {
     const userRoleRepository = this.dataSource.getRepository(UserRole);
-    const userPrivilegeRepository = this.dataSource.getRepository(UserPrivilege);
+    const userPrivilegeRepository =
+      this.dataSource.getRepository(UserPrivilege);
     const userRepository = this.dataSource.getRepository(User);
 
     const roles = ['admin', 'talent', 'business_owner'];
@@ -25,7 +25,9 @@ export class SeedService {
 
     try {
       for (const roleName of roles) {
-        let role = await userRoleRepository.findOne({ where: { name: roleName } });
+        let role = await userRoleRepository.findOne({
+          where: { name: roleName },
+        });
 
         if (!role) {
           role = userRoleRepository.create({
@@ -40,15 +42,18 @@ export class SeedService {
 
         createdRoles.push(role);
       }
+    } catch (error) {
+      this.logger.log('Error creating roles');
+    }
 
-    } catch (error) { }
-
-    const privileges = ['can_create_staff', 'can_view_dashboard', 'can_delete_user', 'can_update_profile', 'can_create_role', 'can_create_privilege', 'can_view_users'];
+    const privileges = Object.values(PrivilegesConstant);
     const createdPrivileges = [];
 
     try {
       for (const privilegeName of privileges) {
-        let privilege = await userPrivilegeRepository.findOne({ where: { name: privilegeName } });
+        let privilege = await userPrivilegeRepository.findOne({
+          where: { name: privilegeName },
+        });
 
         if (!privilege) {
           privilege = userPrivilegeRepository.create({
@@ -112,7 +117,9 @@ export class SeedService {
 
     try {
       for (const userData of sampleUsers) {
-        const existingUser = await userRepository.findOne({ where: { email: userData.email } });
+        const existingUser = await userRepository.findOne({
+          where: { email: userData.email },
+        });
 
         if (!existingUser) {
           const user = userRepository.create(userData);

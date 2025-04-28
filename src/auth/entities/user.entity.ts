@@ -6,8 +6,11 @@ import {
   Index,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { UserRole } from './user-role.entity';
+import { Job } from 'src/job/entities/job.entity';
+import { Application } from 'src/application/entities/application.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -42,4 +45,10 @@ export class User extends BaseEntity {
   @ManyToOne(() => UserRole, { eager: true, nullable: true })
   @JoinColumn({ name: 'userRoleId' })
   userRole: UserRole;
+
+  @OneToMany(() => Job, job => job.business)
+  jobs: Job[];
+
+  @OneToMany(() => Application, application => application.talent)
+  applications: Application[];
 }

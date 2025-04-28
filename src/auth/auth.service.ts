@@ -1,3 +1,4 @@
+import { AssignPrivilegeDto } from './dto/assign-privilege.dto';
 import { AccessDto } from './dto/access.dto';
 import {
   Injectable,
@@ -30,6 +31,7 @@ import { CacheService } from 'src/cache/cache.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { NewPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserPrivilege } from './entities/user-privilege.entity';
 
 @Injectable()
 export class AuthService {
@@ -291,8 +293,33 @@ export class AuthService {
     return await this.userRoleRepository.createRole(accessDto);
   }
 
+  async getAllRoles(
+    page: number,
+    perPage: number,
+    search: string,
+    @Req() req: Request,
+  ) {
+    return await this.userRoleRepository.getAllRoles(page, perPage, search, req);
+  }
+
+  async getRoleById(id: string) {
+    if (!isUUID(id)) {
+      throw new BadRequestException('Invalid Role ID');
+    }
+    return await this.userRoleRepository.getRoleById(id);
+  }
+
   async createPrivilege(accessDto: AccessDto) {
     return await this.userPrivilegeRepository.createPrivilege(accessDto);
+  }
+
+  async getAllPrivileges(
+    page: number,
+    perPage: number,
+    search: string,
+    @Req() req: Request,
+  ) {
+    return await this.userPrivilegeRepository.getAllPrivileges(page, perPage, search, req);
   }
 
   verifyJwt(token: string) {
@@ -347,6 +374,37 @@ export class AuthService {
     await this.usersRepository.saveUpdate(id, dto);
     return {
       message: 'User data updated successfully'
+    }
+  }
+
+  async assignPrivilege(assignPrivilegeDto: AssignPrivilegeDto) {
+    const { roleId, privilegeIds } = assignPrivilegeDto;
+    try {
+      const role = await this.userRoleRepository.findOne({
+        where: { id: roleId },
+        relations: ['userPrivileges'],
+      });
+
+      let availablePrivs = [];
+      let unAvailablePrivs = [];
+      privilegeIds.forEach(async (id) => {
+        const privilege = await this.userPrivilegeRepository.findOne({ where: { id } });
+        console.log(privilege);
+        if (privilege) {
+          availablePrivs.push(privilege);
+        } else {
+          unAvailablePrivs.push(privilege);
+        }
+      })
+
+      if (role) {
+        role.userPrivileges = availablePrivs;
+        await this.userRoleRepository.save(role);
+      } else {
+
+      }
+    } catch (error) {
+
     }
   }
 }

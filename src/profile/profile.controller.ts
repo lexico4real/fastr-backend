@@ -1,14 +1,16 @@
-import { Body, Controller, Get, Patch, UseGuards, Request, Param } from '@nestjs/common';
+import { Body, Controller, Get, Patch, UseGuards, Param, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { ProfileService } from './profile.service';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrivilegesGuard } from 'src/auth/guards/privileges.guard';
 import { PrivilegesConstant } from 'common/enums/privileges';
 import { Privileges } from 'src/auth/decorators/privileges.decorator';
 
 @Controller('profile')
+@ApiTags('profile')
 @UseGuards(AuthGuard())
 @ApiBearerAuth('token')
 export class ProfileController {
@@ -20,8 +22,8 @@ export class ProfileController {
   }
 
   @Patch('update')
-  async updateProfile(@Request() req: any, @Body() updateProfileDto: UpdateProfileDto) {
-    const userId = req.user.id;
+  async updateProfile(@Req() req: Request, @Body() updateProfileDto: UpdateProfileDto) {
+    const userId = req.user['id'];
     return this.profileService.updateProfile(userId, updateProfileDto);
   }
 
