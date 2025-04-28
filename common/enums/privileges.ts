@@ -6,5 +6,15 @@ export enum PrivilegesConstant {
   CAN_CREATE_ROLE = 'can_create_role',
   CAN_CREATE_PRIVILEGE = 'can_create_privilege',
   CAN_VIEW_USERS = 'can_view_users',
-  CAN_VIEW_USER_PROFILE = 'can_view_user_profile'
+  CAN_VIEW_USER_PROFILE = 'can_view_user_profile',
+  CAN_CREATE_JOB = "can_create_job",
+  CAN_UPDATE_JOB = "can_update_job",
+  CAN_DELETE_JOB = "can_delete_job",
+  CAN_GET_JOBS_POSTED = "can_get_jobs_posted",
+  CAN_VIEW_PRIVILEGES = "can_view_privileges",
+  CAN_VIEW_ROLES = "can_view_roles",
+  CAN_ASSIGN_PRIVILEGES = "can_assign_pivileges",
+  CAN_VIEW_RECEIVED_APPLICATIONS = "can_view_received_applications",
+  CAN_APPLY_FOR_JOB = "can_apply_for_job",
+  CAN_UPDATE_APPLICATION_STATUS = "can_update_application_status",
 }

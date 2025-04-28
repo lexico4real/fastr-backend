@@ -1,10 +1,10 @@
-import { AccessDto } from './../dto/access.dto';
-import { EntityRepository, Repository, FindManyOptions, ILike } from 'typeorm';
+import { Repository, FindManyOptions, ILike } from 'typeorm';
 import { Request } from 'express';
 import { InternalServerErrorException, Req } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AccessDto } from './../dto/access.dto';
 import { UserPrivilege } from '../entities/user-privilege.entity';
 import { generatePagination } from 'common/utils/pagination';
-import { InjectRepository } from '@nestjs/typeorm';
 
 export class UserPrivilegeRepository extends Repository<UserPrivilege> {
   constructor(
@@ -26,8 +26,8 @@ export class UserPrivilegeRepository extends Repository<UserPrivilege> {
   async getAllPrivileges(
     page = 1,
     perPage = 10,
-    search: string,
-    @Req() req: Request,
+    search?: string,
+    @Req() req?: Request,
   ) {
     try {
       const skip = (page - 1) * perPage;

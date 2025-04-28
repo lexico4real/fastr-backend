@@ -12,6 +12,8 @@ import { EmailModule } from './email/email.module';
 import { OtpModule } from './otp/otp.module';
 import { SeedModule } from './seed/seed.module';
 import { ProfileModule } from './profile/profile.module';
+import { JobModule } from './job/job.module';
+import { ApplicationModule } from './application/application.module';
 
 @Module({
   imports: [
@@ -28,7 +30,7 @@ import { ProfileModule } from './profile/profile.module';
         port: Number(process.env.REDIS_DB_PORT),
         password: process.env.REDIS_DB_AUTH,
       },
-    }), CacheModule, AuthModule, EmailModule, OtpModule, SeedModule, ProfileModule
+    }), CacheModule, AuthModule, EmailModule, OtpModule, SeedModule, ProfileModule, JobModule, ApplicationModule
   ],
   controllers: [AppController],
   providers: [AppService],

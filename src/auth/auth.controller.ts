@@ -1,3 +1,4 @@
+import { AssignPrivilegeDto } from './dto/assign-privilege.dto';
 import {
   Body,
   Controller,
@@ -90,13 +91,63 @@ export class AuthController {
     return await this.authService.createRole(accessDto);
   }
 
-  @Post('role/privilege')
+  @Get('user/roles')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @ApiBearerAuth('token')
+  @Privileges(PrivilegesConstant.CAN_VIEW_ROLES)
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'perPage', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  async getAllRoles(
+    @Query('page') page: number,
+    @Query('perPage') perPage: number,
+    @Query('search') search: string,
+    @Req() req: Request,
+  ) {
+    return await this.authService.getAllRoles(page, perPage, search, req);
+  }
+
+  @Get('user/role/:id')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @ApiBearerAuth('token')
+  @Privileges(PrivilegesConstant.CAN_VIEW_ROLES)
+  async getRoleById(@Param('id') id: string) {
+    return await this.authService.getRoleById(id);
+  }
+
+  @Post('role/privilege')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_CREATE_PRIVILEGE)
+  @ApiBearerAuth('token')
   async createPrivilege(@Body() accessDto: AccessDto) {
     return await this.authService.createPrivilege(accessDto);
   }
+
+  @Get('role/privileges')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_VIEW_PRIVILEGES)
+  @ApiBearerAuth('token')
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'perPage', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  async getAllPrivileges(
+    @Query('page') page: number,
+    @Query('perPage') perPage: number,
+    @Query('search') search: string,
+    @Req() req: Request,
+  ) {
+    return await this.authService.getAllPrivileges(page, perPage, search, req);
+  }
+
+  @Post('assign/privileges')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_ASSIGN_PRIVILEGES)
+  @ApiBearerAuth('token')
+  async assignPrivilege(@Body() assignPrivilegeDto: AssignPrivilegeDto) {
+    return await this.authService.assignPrivilege(assignPrivilegeDto)
+  }
+
+  // todo - unassign privileges
 
   @Post('register/staff')
   @UseGuards(AuthGuard(), PrivilegesGuard)
