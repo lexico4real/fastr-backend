@@ -7,6 +7,7 @@ import { UserRole } from 'src/auth/entities/user-role.entity';
 import { User } from 'src/auth/entities/user.entity';
 import { UserPrivilege } from 'src/auth/entities/user-privilege.entity';
 import { PrivilegesConstant } from 'common/enums/privileges';
+import { RolesConstant } from 'common/enums/roles';
 
 @Injectable()
 export class SeedService {
@@ -20,7 +21,7 @@ export class SeedService {
       this.dataSource.getRepository(UserPrivilege);
     const userRepository = this.dataSource.getRepository(User);
 
-    const roles = ['admin', 'talent', 'business_owner'];
+    const roles = Object.values(RolesConstant);
     const createdRoles = [];
 
     try {
@@ -111,7 +112,7 @@ export class SeedService {
         phoneNumber: '08030000003',
         accountStatus: AccountStatus.ACTIVE,
         isConfirmed: true,
-        userRole: createdRoles.find((role) => role.name === 'business_owner'),
+        userRole: createdRoles.find((role) => role.name === 'business'),
       },
     ];
 

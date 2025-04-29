@@ -107,7 +107,6 @@ export class UserRepository extends Repository<User> {
         })
         .where('id = :id', { id })
         .execute();
-      console.log(result)
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException('Failed to update user');

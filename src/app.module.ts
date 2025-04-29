@@ -14,9 +14,11 @@ import { SeedModule } from './seed/seed.module';
 import { ProfileModule } from './profile/profile.module';
 import { JobModule } from './job/job.module';
 import { ApplicationModule } from './application/application.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
