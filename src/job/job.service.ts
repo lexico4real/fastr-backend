@@ -40,33 +40,88 @@ export class JobService {
     return job;
   }
 
-  async createJob(userId: string, createJobDto: CreateJobDto): Promise<Job> {
+  async createJob(user: any, createJobDto: CreateJobDto): Promise<Job> {
     const job = this.jobRepository.create({
       ...createJobDto,
-      businessId: userId,
+      businessId: user.id,
     });
-    return await this.jobRepository.createJob(job);
+    const result = await this.jobRepository.createJob(job);
+
+    const html = `
+      <h1>New Job Posting</h1>
+      <p>Job Title: ${createJobDto.title}</p>
+      <p>Job Description: ${createJobDto.description}</p>
+      <p>Job Location: ${createJobDto.location}</p>
+      <p>Salary: ${createJobDto.salary}</p>
+      <p>Posted by: ${user.id}</p>
+      <p>Thank you for using our service!</p>
+      <p>Best regards,</p>
+      <p>Fastr</p>
+    `;
+    await this.emailService.sendMail({
+      to: user.email,
+      subject: 'New Job Posting',
+      text: '',
+      html,
+    })
+    return result;
   }
 
   async updateJob(
-    userId: string,
+    user: any,
     jobId: string,
     updateJobDto: UpdateJobDto,
   ): Promise<Job> {
     const job = await this.getJobById(jobId);
-    if (!job || job.businessId !== userId) {
+    if (!job || job.businessId !== user.id) {
       throw new NotFoundException('Job not found or user not authorized');
     }
     Object.assign(job, updateJobDto);
-    return await this.jobRepository.updateJob(job);
+    const result = await this.jobRepository.updateJob(job);
+
+    const html = `
+      <h1>Job Update</h1>
+      <p>Job Title: ${updateJobDto.title}</p>
+      <p>Job Description: ${updateJobDto.description}</p>
+      <p>Job Location: ${updateJobDto.location}</p>
+      <p>Salary: ${updateJobDto.salary}</p>
+      <p>Updated by: ${user.id}</p>
+      <p>Thank you for using our service!</p>
+      <p>Best regards,</p>
+      <p>Fastr</p>
+    `;
+    await this.emailService.sendMail({
+      to: user.email,
+      subject: 'Job Update',
+      text: '',
+      html,
+    })
+    return result;
   }
 
-  async deleteJob(userId: string, jobId: string): Promise<void> {
+  async deleteJob(user: any, jobId: string): Promise<void> {
     const job = await this.getJobById(jobId);
-    if (!job || job.businessId !== userId) {
+    if (!job || job.businessId !== user.id) {
       throw new NotFoundException('Job not found or user not authorized');
     }
     await this.jobRepository.deleteJob(job);
+    const html = `
+      <h1>Job Deletion</h1>
+      <p>Job Title: ${job.title}</p>
+      <p>Job Description: ${job.description}</p>
+      <p>Job Location: ${job.location}</p>
+      <p>Salary: ${job.salary}</p>
+      <p>Deleted by: ${user.email}</p>
+      <p>Thank you for using our service!</p>
+      <p>Best regards,</p>
+      <p>Fastr</p>
+    `;
+    await this.emailService.sendMail({
+      to: user.email,
+      subject: 'Job Deletion',
+      text: '',
+      html,
+    })
   }
 
   async getMyJobPostings(

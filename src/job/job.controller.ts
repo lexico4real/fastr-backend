@@ -73,8 +73,8 @@ export class JobController {
   @Privileges(PrivilegesConstant.CAN_CREATE_JOB)
   @Post('create')
   async createJob(@Req() req: Request, @Body() createJobDto: CreateJobDto) {
-    const userId = req.user['id'];
-    return this.jobService.createJob(userId, createJobDto);
+    const user = req.user;
+    return this.jobService.createJob(user, createJobDto);
   }
 
   // 9044811783
@@ -87,8 +87,8 @@ export class JobController {
     @Param('jobId') jobId: string,
     @Body() updateJobDto: UpdateJobDto,
   ) {
-    const userId = req.user['id'];
-    return await this.jobService.updateJob(userId, jobId, updateJobDto);
+    const user = req.user;
+    return await this.jobService.updateJob(user, jobId, updateJobDto);
   }
 
   @Get('opening/:jobId')
@@ -101,7 +101,7 @@ export class JobController {
   @Privileges(PrivilegesConstant.CAN_DELETE_JOB)
   @Delete(':jobId')
   async deleteJob(@Req() req: Request, @Param('jobId') jobId: string) {
-    const userId = req.user['id'];
-    return this.jobService.deleteJob(userId, jobId);
+    const user = req.user;
+    return this.jobService.deleteJob(user, jobId);
   }
 }
