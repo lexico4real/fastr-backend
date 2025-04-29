@@ -24,7 +24,6 @@ export class ApplicationRepository extends Repository<Application> {
         relations: ['job', 'talent'],
       });
     } catch (error) {
-      console.log(error)
       throw new InternalServerErrorException(
         'Some thing went wrong: APPR-ERROR',
       );
@@ -50,7 +49,6 @@ export class ApplicationRepository extends Repository<Application> {
 
       return generatePagination(page, perPage, total, req, result);
     } catch (error) {
-      console.log(error);
       throw new InternalServerErrorException(
         'Something went wrong: APPR-ERROR',
       );

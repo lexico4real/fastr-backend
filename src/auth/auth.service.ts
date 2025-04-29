@@ -389,7 +389,6 @@ export class AuthService {
       let unAvailablePrivs = [];
       privilegeIds.forEach(async (id) => {
         const privilege = await this.userPrivilegeRepository.findOne({ where: { id } });
-        console.log(privilege);
         if (privilege) {
           availablePrivs.push(privilege);
         } else {

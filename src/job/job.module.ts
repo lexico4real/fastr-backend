@@ -9,6 +9,7 @@ import { PassportModule } from '@nestjs/passport';
 import { OtpModule } from 'src/otp/otp.module';
 import { EmailModule } from 'src/email/email.module';
 import { Application } from 'src/application/entities/application.entity';
+import { JobStatusCronService } from './utils/job-status.cron.service';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { Application } from 'src/application/entities/application.entity';
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [JobController],
-  providers: [JobService, JobRepository],
+  providers: [JobService, JobStatusCronService, JobRepository],
   exports: [JobService, TypeOrmModule],
 })
 export class JobModule {}
