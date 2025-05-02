@@ -18,6 +18,7 @@ export class ProfileController {
 
   @Get('me')
   async getProfile(@GetUser() user: any) {
+    console.log(user)
     return this.profileService.getProfile(user.id);
   }
 

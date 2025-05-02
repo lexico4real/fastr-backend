@@ -52,6 +52,7 @@
     "jsontoxml": "^1.0.1",
     "log4js": "^6.9.1",
     "nestjs-cookie-session": "^4.0.0",
+    "nestjs-stripe": "^1.0.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
@@ -62,6 +63,7 @@
     "rimraf": "^6.0.1",
     "rxjs": "^7.8.2",
     "skeleton": "file:",
+    "stripe": "^18.0.0",
     "typeorm": "^0.3.22",
     "uuid": "^11.1.0",
     "webpack": "^5.99.6"
@@ -85,6 +87,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/request": "^2.48.12",
     "@types/speakeasy": "^2.0.10",
+    "@types/stripe": "^8.0.417",
     "@types/supertest": "^6.0.3",
     "@types/xml2js": "^0.4.14",
     "@typescript-eslint/eslint-plugin": "^8.31.0",

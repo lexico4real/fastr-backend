@@ -4,12 +4,13 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApplicationsService } from './application.service';
 import { ApplyDto } from './dto/apply.dto';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PrivilegesGuard } from 'src/auth/guards/privileges.guard';
 import { Privileges } from 'src/auth/decorators/privileges.decorator';
 import { PrivilegesConstant } from 'common/enums/privileges';
 
 @UseGuards(AuthGuard())
+@ApiBearerAuth('token')
 @ApiTags('applications')
 @Controller('applications')
 export class ApplicationsController {

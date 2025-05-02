@@ -17,4 +17,7 @@ export enum PrivilegesConstant {
   CAN_VIEW_RECEIVED_APPLICATIONS = "can_view_received_applications",
   CAN_APPLY_FOR_JOB = "can_apply_for_job",
   CAN_UPDATE_APPLICATION_STATUS = "can_update_application_status",
+  CAN_GET_INVOICES = "can_get_invoices",
+  CAN_GET_PAYMENT_HISTORY = "can_get_payment_history",
+  CAN_MAKE_PAYMENT = "can_make_payment",
 }

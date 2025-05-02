@@ -8,7 +8,6 @@ import {
   Post,
   Query,
   Req,
-  Res,
   Session,
   UseGuards,
 } from '@nestjs/common';
@@ -57,6 +56,33 @@ export class AuthController {
     return await this.authService.logout(userId, token);
   }
 
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return await this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() newPasswordDto: NewPasswordDto, @Query() resetPasswordDto: ResetPasswordDto) {
+    return await this.authService.resetPassword(resetPasswordDto, newPasswordDto);
+  }
+
+  @HttpCode(200)
+  @Post('otp/:admin')
+  getLoginOTPAdmin(
+    @Param('admin') admin: string,
+    @Body() authCredentialsDto: AuthCredentialsDto
+  ) {
+    return this.authService.getLoginOTP(authCredentialsDto, admin);
+  }
+
+  @Post('user/role')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
+  @ApiBearerAuth('token')
+  async createRole(@Body() accessDto: AccessDto) {
+    return await this.authService.createRole(accessDto);
+  }
+
   @Get('users')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
@@ -71,24 +97,6 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<any> {
     return this.authService.getAllUsers(page, perPage, search, req);
-  }
-
-  @Post('forgot-password')
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return await this.authService.forgotPassword(forgotPasswordDto);
-  }
-
-  @Post('reset-password')
-  async resetPassword(@Body() newPasswordDto: NewPasswordDto, @Query() resetPasswordDto: ResetPasswordDto) {
-    return await this.authService.resetPassword(resetPasswordDto, newPasswordDto);
-  }
-
-  @Post('user/role')
-  @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
-  @ApiBearerAuth('token')
-  async createRole(@Body() accessDto: AccessDto) {
-    return await this.authService.createRole(accessDto);
   }
 
   @Get('user/roles')
@@ -107,20 +115,9 @@ export class AuthController {
     return await this.authService.getAllRoles(page, perPage, search, req);
   }
 
-  @Get('user/role/:id')
-  @UseGuards(AuthGuard(), PrivilegesGuard)
-  @ApiBearerAuth('token')
-  @Privileges(PrivilegesConstant.CAN_VIEW_ROLES)
-  async getRoleById(@Param('id') id: string) {
-    return await this.authService.getRoleById(id);
-  }
-
-  @Post('role/privilege')
-  @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_PRIVILEGE)
-  @ApiBearerAuth('token')
-  async createPrivilege(@Body() accessDto: AccessDto) {
-    return await this.authService.createPrivilege(accessDto);
+  @Get('talent/confirm')
+  async confirmAccount(@Query('token') token: string): Promise<{ message: string }> {
+    return this.authService.confirmAccount(token);
   }
 
   @Get('role/privileges')
@@ -139,6 +136,22 @@ export class AuthController {
     return await this.authService.getAllPrivileges(page, perPage, search, req);
   }
 
+  @Get('user/role/:id')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @ApiBearerAuth('token')
+  @Privileges(PrivilegesConstant.CAN_VIEW_ROLES)
+  async getRoleById(@Param('id') id: string) {
+    return await this.authService.getRoleById(id);
+  }
+
+  @Post('role/privilege')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_CREATE_PRIVILEGE)
+  @ApiBearerAuth('token')
+  async createPrivilege(@Body() accessDto: AccessDto) {
+    return await this.authService.createPrivilege(accessDto);
+  }
+
   @Post('assign/privileges')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_ASSIGN_PRIVILEGES)
@@ -146,8 +159,6 @@ export class AuthController {
   async assignPrivilege(@Body() assignPrivilegeDto: AssignPrivilegeDto) {
     return await this.authService.assignPrivilege(assignPrivilegeDto)
   }
-
-  // todo - unassign privileges
 
   @Post('register/staff')
   @UseGuards(AuthGuard(), PrivilegesGuard)
@@ -162,10 +173,5 @@ export class AuthController {
   registerTalent(@Body() createUserDto: CreateUserDto): Promise<void> {
     createUserDto.role = RolesConstant.TALENT;
     return this.authService.signUp(createUserDto);
-  }
-
-  @Get('talent/confirm')
-  async confirmAccount(@Query('token') token: string): Promise<{ message: string }> {
-    return this.authService.confirmAccount(token);
   }
 }

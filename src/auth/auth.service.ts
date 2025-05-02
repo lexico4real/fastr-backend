@@ -31,7 +31,6 @@ import { CacheService } from 'src/cache/cache.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { NewPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UserPrivilege } from './entities/user-privilege.entity';
 
 @Injectable()
 export class AuthService {
@@ -84,11 +83,17 @@ export class AuthService {
     return result;
   }
 
-  async getLoginOTP(authCredentialsDto: AuthCredentialsDto) {
+  async getLoginOTP(authCredentialsDto: AuthCredentialsDto, roleType?: string) {
     const { email, password } = authCredentialsDto;
     const normalizedEmail = email.toLowerCase();
 
     const user = await this.usersRepository.getUserByEmail(normalizedEmail);
+
+    if (roleType && user.userRole.name !== roleType) {
+      throw new UnauthorizedException(
+        'Wrong email/password. Please check your login credentials.',
+      );
+    }
 
     if (!user.isConfirmed) {
       throw new ForbiddenException(

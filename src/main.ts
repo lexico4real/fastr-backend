@@ -17,16 +17,26 @@ async function bootstrap() {
   const doc = new SwaggerConfig();
   const app = await NestFactory.create(AppModule);
 
+  app.use(
+    '/api/v1/payments/stripe/fastr-webhook',
+    json({
+      verify: (req, res, buf) => {
+        req['rawBody'] = buf;
+      },
+    }),
+  );
+
   app.useGlobalPipes(
     new TrimInputPipe(),
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
   await cors.set(app);
   app.setGlobalPrefix('/api/v1');
   await doc.set(app);
   app.use(compression());
   app.use(json({ limit: '100mb' }));
-  app.use(urlencoded({ extended: true, limit: '100mb' }))
+  app.use(urlencoded({ extended: true, limit: '100mb' }));
+
   app.useGlobalInterceptors(new TransformInterceptor());
   app.enableShutdownHooks();
   if (process.env.NODE_ENV !== 'production') {
