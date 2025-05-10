@@ -13,11 +13,11 @@ export class Invoice extends BaseEntity {
   business: User;
 
   @Column()
-  talentId: string;
+  studentId: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'talentId' })
-  talent: User;
+  @JoinColumn({ name: 'studentId' })
+  student: User;
 
   @Column()
   description: string;

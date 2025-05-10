@@ -21,7 +21,7 @@ export class ApplicationRepository extends Repository<Application> {
     try {
       return await this.findOne({
         where: { id: applicationId },
-        relations: ['job', 'talent'],
+        relations: ['job', 'student'],
       });
     } catch (error) {
       throw new InternalServerErrorException(
@@ -31,7 +31,7 @@ export class ApplicationRepository extends Repository<Application> {
   }
 
   async getMyApplications(
-    talentId: string,
+    studentId: string,
     page = 1,
     perPage = 10,
     @Req() req?: Request,
@@ -40,7 +40,7 @@ export class ApplicationRepository extends Repository<Application> {
       const skip = (page - 1) * perPage;
 
       const [result, total] = await this.findAndCount({
-        where: { talentId },
+        where: { studentId },
         relations: ['job'],
         order: { appliedAt: 'DESC' },
         skip,
@@ -83,10 +83,10 @@ export class ApplicationRepository extends Repository<Application> {
     }
   }
 
-  async apply(talentId: string, jobId: string): Promise<Application> {
+  async apply(studentId: string, jobId: string): Promise<Application> {
 
     const existingApplication = await this.findOne({
-      where: { jobId, talentId },
+      where: { jobId, studentId },
     });
 
     if (existingApplication) {
@@ -95,7 +95,7 @@ export class ApplicationRepository extends Repository<Application> {
 
     const application = this.create({
       jobId,
-      talentId,
+      studentId,
     });
 
     return await this.save(application);

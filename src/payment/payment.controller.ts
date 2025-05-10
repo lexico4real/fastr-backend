@@ -57,7 +57,7 @@ export class PaymentController {
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_MAKE_PAYMENT)
   async createCheckoutSession(@Req() req: Request, @Body() dto: PayInvoiceDto) {
-    const talentId = req.user['id'];
-    return await this.paymentService.createCheckoutSession(talentId, dto);
+    const studentId = req.user['id'];
+    return await this.paymentService.createCheckoutSession(studentId, dto);
   }
 }

@@ -23,7 +23,7 @@ import { StripeModule } from 'nestjs-stripe';
     ScheduleModule.forRoot(),
     StripeModule.forRoot({
       apiKey: process.env.STRIPE_SECRET_KEY,
-      apiVersion: '2025-03-31.basil',
+      apiVersion: '2025-04-30.basil' as any,
     }),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({

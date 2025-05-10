@@ -18,7 +18,6 @@ export class ProfileController {
 
   @Get('me')
   async getProfile(@GetUser() user: any) {
-    console.log(user)
     return this.profileService.getProfile(user.id);
   }
 
@@ -33,5 +32,13 @@ export class ProfileController {
   @Privileges(PrivilegesConstant.CAN_VIEW_USER_PROFILE)
   async getProfileById(@Param('id') id: string) {
     return await this.profileService.getProfileById(id);
+  }
+
+  // profile privacy
+  @Patch('privacy')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_UPDATE_PROFILE_PRIVACY)
+  async updateProfilePrivacy(@GetUser() user: any, @Body() updateProfileDto: UpdateProfileDto) {
+    return this.profileService.updateProfile(user.id, updateProfileDto);
   }
 }

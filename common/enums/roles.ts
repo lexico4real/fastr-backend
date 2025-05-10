@@ -1,6 +1,7 @@
 export enum RolesConstant {
-  ADMIN = 'admin',
-  TALENT = 'talent',
-  BUSINESS = 'business',
-  APPLICATION_SUPPORT = 'application_support',
+  ADMIN = 'ADMIN',
+  STUDENT = 'STUDENT',
+  BUSINESS = 'BUSINESS',
+  BUSINESS_ADMIN = 'BUSINESS_ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN',
 }

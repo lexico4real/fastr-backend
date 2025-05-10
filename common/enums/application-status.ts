@@ -1,13 +1,13 @@
 enum ApplicationStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  IN_REVIEW = 'in_review',
-  INTERVIEW_SCHEDULED = 'interview_scheduled',
-  OFFER_MADE = 'offer_made',
-  OFFER_ACCEPTED = 'offer_accepted',
-  OFFER_REJECTED = 'offer_rejected',
-  WITHDRAWN = 'withdrawn',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  IN_REVIEW = 'IN_REVIEW',
+  INTERVIEW_SCHEDULED = 'INTERVIEW_SCHEDULED',
+  OFFER_MADE = 'OFFER_MADE',
+  OFFER_ACCEPTED = 'OFFER_ACCEPTED',
+  OFFER_REJECTED = 'OFFER_REJECTED',
+  WITHDRAWN = 'WITHDRAWN',
 }
 
 export default ApplicationStatus;

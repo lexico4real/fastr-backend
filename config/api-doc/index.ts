@@ -6,7 +6,7 @@ export default class SwaggerConfig {
     const options = new DocumentBuilder()
       .setTitle('Fastr App Backend')
       .setDescription(
-        'FASTR is a dual-market recruitment platform that connects university students with local businesses for internship, part-time, and freelance work opportunities. It simplifies the recruitment process, helping students gain experience and businesses find on-demand talent.',
+        'FASTR is a dual-market recruitment platform that connects university students with local businesses for internship, part-time, and freelance work opportunities. It simplifies the recruitment process, helping students gain experience and businesses find on-demand student.',
       )
       .setVersion('1.0.0')
       .addTag('Fastr App Backend')

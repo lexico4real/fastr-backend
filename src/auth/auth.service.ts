@@ -357,7 +357,7 @@ export class AuthService {
   }
 
   private async sendConfirmationEmail(email: string, token: string): Promise<void> {
-    const confirmationUrl = `http://localhost:3000/api/v1/auth/talent/confirm?token=${token}`;
+    const confirmationUrl = `http://localhost:3000/api/v1/auth/student/confirm?token=${token}`;
 
     await this.emailService.sendMail({
       to: email,

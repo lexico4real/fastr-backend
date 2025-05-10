@@ -82,7 +82,7 @@ export class SeedService {
         phoneNumber: '08020796658',
         accountStatus: AccountStatus.ACTIVE,
         isConfirmed: true,
-        userRole: createdRoles.find((role) => role.name === 'admin'),
+        userRole: createdRoles.find((role) => role.name === RolesConstant.SUPER_ADMIN),
       },
       {
         email: 'admin@fastr.com',
@@ -92,17 +92,17 @@ export class SeedService {
         phoneNumber: '08030000001',
         accountStatus: AccountStatus.ACTIVE,
         isConfirmed: true,
-        userRole: createdRoles.find((role) => role.name === 'admin'),
+        userRole: createdRoles.find((role) => role.name === RolesConstant.ADMIN),
       },
       {
-        email: 'talent@fastr.com',
+        email: 'student@fastr.com',
         password: passwordHash,
-        firstName: 'Talent',
+        firstName: 'Student',
         lastName: 'User',
         phoneNumber: '08030000002',
         accountStatus: AccountStatus.ACTIVE,
         isConfirmed: true,
-        userRole: createdRoles.find((role) => role.name === 'talent'),
+        userRole: createdRoles.find((role) => role.name === RolesConstant.STUDENT),
       },
       {
         email: 'business@fastr.com',
@@ -112,7 +112,17 @@ export class SeedService {
         phoneNumber: '08030000003',
         accountStatus: AccountStatus.ACTIVE,
         isConfirmed: true,
-        userRole: createdRoles.find((role) => role.name === 'business'),
+        userRole: createdRoles.find((role) => role.name === RolesConstant.BUSINESS),
+      },
+      {
+        email: 'business_admin@fastr.com',
+        password: passwordHash,
+        firstName: 'Business',
+        lastName: 'Admin',
+        phoneNumber: '08030000004',
+        accountStatus: AccountStatus.ACTIVE,
+        isConfirmed: true,
+        userRole: createdRoles.find((role) => role.name === RolesConstant.BUSINESS_ADMIN),
       },
     ];
 
@@ -135,22 +145,22 @@ export class SeedService {
     }
 
     try {
-      const adminRole = await userRoleRepository.findOne({
-        where: { name: 'admin' },
+      const superAdminRole = await userRoleRepository.findOne({
+        where: { name: 'SUPER_ADMIN' },
         relations: ['userPrivileges'],
       });
 
       const allPrivileges = await userPrivilegeRepository.find();
 
-      if (adminRole) {
-        adminRole.userPrivileges = allPrivileges;
-        await userRoleRepository.save(adminRole);
+      if (superAdminRole) {
+        superAdminRole.userPrivileges = allPrivileges;
+        await userRoleRepository.save(superAdminRole);
         this.logger.log('✅ Assigned all privileges to admin role.');
       } else {
-        this.logger.warn('⚠️ Admin role not found.');
+        this.logger.warn('⚠️ Super Admin role not found.');
       }
     } catch (error) {
-      this.logger.error('Failed to assign privileges to admin role', error);
+      this.logger.error('Failed to assign privileges to super admin role', error);
     }
   }
 }

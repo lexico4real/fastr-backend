@@ -49,6 +49,6 @@ export class User extends BaseEntity {
   @OneToMany(() => Job, job => job.business)
   jobs: Job[];
 
-  @OneToMany(() => Application, application => application.talent)
+  @OneToMany(() => Application, application => application.student)
   applications: Application[];
 }

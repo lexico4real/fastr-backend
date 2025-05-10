@@ -11,14 +11,14 @@ export class Application extends BaseEntity {
   job: Job;
 
   @ManyToOne(() => User, user => user.applications)
-  @JoinColumn({ name: 'talentId' })
-  talent: User;
+  @JoinColumn({ name: 'studentId' })
+  student: User;
 
   @Column()
   jobId: string;
 
   @Column()
-  talentId: string;
+  studentId: string;
 
   @Column({ default: ApplicationStatus.PENDING })
   status: string;

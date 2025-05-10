@@ -39,7 +39,7 @@ export class AuthController {
   }
 
   @HttpCode(200)
-  @Post('sign-in')
+  @Post('login')
   validateLoginOtp(
     @Body() authCredentialsDto: AuthCredentialsDto,
     @Session() session?: any,
@@ -85,7 +85,7 @@ export class AuthController {
 
   @Get('users')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
+  @Privileges(PrivilegesConstant.CAN_VIEW_USERS)
   @ApiBearerAuth('token')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
@@ -115,7 +115,7 @@ export class AuthController {
     return await this.authService.getAllRoles(page, perPage, search, req);
   }
 
-  @Get('talent/confirm')
+  @Get('student/confirm')
   async confirmAccount(@Query('token') token: string): Promise<{ message: string }> {
     return this.authService.confirmAccount(token);
   }
@@ -169,9 +169,9 @@ export class AuthController {
     return this.authService.signUp(createUserDto);
   }
 
-  @Post('register/talent')
-  registerTalent(@Body() createUserDto: CreateUserDto): Promise<void> {
-    createUserDto.role = RolesConstant.TALENT;
+  @Post('register/student')
+  registerStudent(@Body() createUserDto: CreateUserDto): Promise<void> {
+    createUserDto.role = RolesConstant.STUDENT;
     return this.authService.signUp(createUserDto);
   }
 }

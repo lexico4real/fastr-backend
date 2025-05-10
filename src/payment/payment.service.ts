@@ -19,7 +19,7 @@ export class PaymentService {
   async createInvoice(businessId: string, dto: CreateInvoiceDto) {
     const invoice = this.invoiceRepository.create({
       businessId,
-      talentId: dto.talentId,
+      studentId: dto.studentId,
       description: dto.description,
       amount: dto.amount,
       status: PaymentStatus.PENDING,
@@ -27,9 +27,9 @@ export class PaymentService {
     return await this.invoiceRepository.save(invoice);
   }
 
-  async payInvoice(talentId: string, dto: PayInvoiceDto) {
+  async payInvoice(studentId: string, dto: PayInvoiceDto) {
     const invoice = await this.invoiceRepository.findOne({
-      where: { id: dto.invoiceId, talentId },
+      where: { id: dto.invoiceId, studentId },
     });
 
     if (!invoice) {
@@ -44,7 +44,7 @@ export class PaymentService {
       currency: 'usd',
       metadata: {
         invoiceId: invoice.id,
-        talentId,
+        studentId,
       },
     });
 
@@ -57,7 +57,7 @@ export class PaymentService {
     return await this.invoiceRepository.find({
       where: [
         { businessId: userId },
-        { talentId: userId },
+        { studentId: userId },
       ],
       order: { createdAt: 'DESC' },
     });
@@ -73,9 +73,9 @@ export class PaymentService {
     return invoice;
   }
 
-  async getPaymentHistory(talentId: string) {
+  async getPaymentHistory(studentId: string) {
     return await this.invoiceRepository.find({
-      where: { talentId, status: PaymentStatus.COMPLETED },
+      where: { studentId, status: PaymentStatus.COMPLETED },
       order: { paidAt: 'DESC' },
     });
   }
@@ -97,10 +97,10 @@ export class PaymentService {
     await this.invoiceRepository.save(invoice);
   }
 
-  async createCheckoutSession(talentId: string, dto: PayInvoiceDto) {
+  async createCheckoutSession(studentId: string, dto: PayInvoiceDto) {
     const { invoiceId } = dto;
     const invoice = await this.invoiceRepository.findOne({
-      where: { id: invoiceId, talentId },
+      where: { id: invoiceId, studentId },
     });
 
     if (!invoice) {
@@ -129,7 +129,7 @@ export class PaymentService {
       cancel_url: `http://localhost:3000/cancel`, // frontend cancel page
       metadata: {
         invoiceId: invoice.id,
-        studentId: talentId,
+        studentId: studentId,
       },
     });
 

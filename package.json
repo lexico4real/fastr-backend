@@ -1,7 +1,7 @@
 {
   "name": "fastr-backend",
   "version": "0.0.1",
-  "description": "FASTR is a dual-market recruitment platform that connects university students with local businesses for internship, part-time, and freelance work opportunities. It simplifies the recruitment process, helping students gain experience and businesses find on-demand talent.",
+  "description": "FASTR is a dual-market recruitment platform that connects university students with local businesses for internship, part-time, and freelance work opportunities. It simplifies the recruitment process, helping students gain experience and businesses find on-demand student.",
   "author": "Oluyinka Abubakar",
   "private": true,
   "license": "MIT",

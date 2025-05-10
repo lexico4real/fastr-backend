@@ -19,17 +19,17 @@ export class ApplicationsService {
     private readonly jobRepository: Repository<Job>,
   ) { }
 
-  async apply(talentId: string, applyDto: ApplyDto) {
+  async apply(studentId: string, applyDto: ApplyDto) {
     const { jobId } = applyDto;
 
     const job = await this.jobRepository.findOne({ where: { id: jobId } });
     if (!job) {
       throw new NotFoundException('Job not found');
     }
-    if (job.businessId === talentId) {
+    if (job.businessId === studentId) {
       throw new ForbiddenException('You cannot apply to your own job');
     }
-    return await this.applicationRepository.apply(talentId, jobId);
+    return await this.applicationRepository.apply(studentId, jobId);
   }
 
   async getApplication(applicationId: string) {
@@ -54,15 +54,15 @@ export class ApplicationsService {
   }
 
   async getMyApplications(
-    talentId: string,
+    studentId: string,
     page: number,
     perPage: number,
     @Req() req?: Request,
   ) {
-    if (!isUUID(talentId)) {
-      throw new BadRequestException('Invalid Talent ID');
+    if (!isUUID(studentId)) {
+      throw new BadRequestException('Invalid Student ID');
     }
-    return await this.applicationRepository.getMyApplications(talentId, page, perPage, req);
+    return await this.applicationRepository.getMyApplications(studentId, page, perPage, req);
   }
 
   async getReceivedApplications(
@@ -76,7 +76,7 @@ export class ApplicationsService {
 
       const [jobs, total] = await this.jobRepository.findAndCount({
         where: { businessId },
-        relations: ['applications', 'applications.talent'],
+        relations: ['applications', 'applications.student'],
         order: { createdAt: 'DESC' },
         skip,
         take: perPage,

@@ -31,7 +31,7 @@ export class JobRepository extends Repository<Job> {
   // async getMyJobApplications(userId: string): Promise<Job[]> {
   //   const jobs = await this.createQueryBuilder('job')
   //     .innerJoin('job.applications', 'application')
-  //     .where('application.talentId = :userId', { userId })
+  //     .where('application.studentId = :userId', { userId })
   //     .getMany();
 
   //   return jobs;
@@ -48,7 +48,7 @@ export class JobRepository extends Repository<Job> {
 
       const [result, total] = await this.createQueryBuilder('job')
         .innerJoin('job.applications', 'application')
-        .where('application.talentId = :userId', { userId })
+        .where('application.studentId = :userId', { userId })
         .orderBy('job.createdAt', 'DESC')
         .skip(skip)
         .take(perPage)

@@ -10,7 +10,7 @@ export class StripeController {
   @Post('fastr-webhook')
   async handleWebhook(@Req() req: Request, @Headers('stripe-signature') signature: string) {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-03-31.basil',
+      apiVersion: '2025-04-30.basil' as any,
       typescript: true,
     });
 
