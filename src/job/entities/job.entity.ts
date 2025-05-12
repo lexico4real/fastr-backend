@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from 'src/base.enttity';
-import { User } from 'src/auth/entities/user.entity';
 import { Application } from 'src/application/entities/application.entity';
+import { Business } from 'src/business/entities/business.entity';
 
 @Entity()
 export class Job extends BaseEntity {
@@ -17,9 +17,9 @@ export class Job extends BaseEntity {
   @Column({ nullable: true })
   location: string;
 
-  @ManyToOne(() => User, user => user.jobs, { nullable: false })
+  @ManyToOne(() => Business, business => business.jobs, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'businessId' })
-  business: User;
+  business: Business;
 
   @Column()
   businessId: string;

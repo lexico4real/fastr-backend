@@ -16,26 +16,6 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  firstName?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  middleName?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  photo?: any;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  phoneNumber?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
   @IsEnum(AccountStatus)
   accountStatus?: AccountStatus;
 }

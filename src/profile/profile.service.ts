@@ -4,13 +4,20 @@ import { AuthService } from 'src/auth/auth.service';
 import { User } from 'src/auth/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { isUUID } from 'class-validator';
+import { Repository } from 'typeorm';
+import { Profile } from './entities/profile.entity';
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    @InjectRepository(Profile)
+    private readonly profileRepository: Repository<Profile>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) { }
 
   async getProfile(userId: string): Promise<User> {
-    const user = await this.authService.findUserById(userId);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -18,23 +25,33 @@ export class ProfileService {
     return user;
   }
 
-  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
-    const user = await this.authService.findUserById(userId);
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<Profile> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
 
-    if (!updateProfileDto.phoneNumber && !updateProfileDto.photo) {
-      throw new BadRequestException('There is no data to update');
-    }
+    if (!user) throw new NotFoundException('User not found');
 
-    updateProfileDto.phoneNumber ??= user.phoneNumber;
-    updateProfileDto.photo ??= user.photo;
+    const profile = user.profile;
 
-    return this.authService.saveUpdate(userId, updateProfileDto as any);
+    if (!profile) throw new NotFoundException('Profile not found');
+
+    Object.assign(profile, dto);
+
+    return this.profileRepository.save(profile);
   }
 
   async getProfileById(id: string) {
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid user ID provided');
     }
-    return await this.authService.findUserById(id);
+    const profile = await this.profileRepository.findOne({ where: { id } });
+
+    if (!profile) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    return profile;
   }
 }

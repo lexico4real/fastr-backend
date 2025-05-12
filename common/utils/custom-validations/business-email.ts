@@ -26,31 +26,30 @@ const publicEmailDomains = [
   'mail.ru',
 ];
 
-function isPublicEmail(email: string): boolean {
+function isBusinessEmail(email: string): boolean {
   const domain = email.split('@')[1]?.toLowerCase();
-  return publicEmailDomains.includes(domain);
+  return domain ? !publicEmailDomains.includes(domain) : false;
 }
 
-@ValidatorConstraint({ name: 'IsNotPublicEmail', async: false })
-export class IsNotPublicEmailConstraint implements ValidatorConstraintInterface {
+@ValidatorConstraint({ name: 'IsBusinessEmail', async: false })
+export class IsBusinessEmailConstraint implements ValidatorConstraintInterface {
   validate(email: any, _args: ValidationArguments): boolean {
-    return typeof email === 'string' && !isPublicEmail(email);
+    return typeof email === 'string' && isBusinessEmail(email);
   }
 
   defaultMessage(_args: ValidationArguments): string {
-    return 'Public email domains are not allowed. Please use a business or university email.';
+    return 'Public email domains are not allowed. Please use a business email address.';
   }
 }
 
-export function IsNotPublicEmail(validationOptions?: ValidationOptions) {
+export function IsBusinessEmail(validationOptions?: ValidationOptions) {
   return function (object: Object, propertyName: string) {
     registerDecorator({
-      name: 'IsNotPublicEmail',
+      name: 'IsBusinessEmail',
       target: object.constructor,
       propertyName,
       options: validationOptions,
-      validator: IsNotPublicEmailConstraint,
+      validator: IsBusinessEmailConstraint,
     });
   };
 }
-

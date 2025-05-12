@@ -1,3 +1,4 @@
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { AssignPrivilegeDto } from './dto/assign-privilege.dto';
 import { AccessDto } from './dto/access.dto';
 import {
@@ -30,7 +31,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { CacheService } from 'src/cache/cache.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { NewPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { RolesConstant } from 'common/enums/roles';
 
 @Injectable()
 export class AuthService {
@@ -47,15 +48,22 @@ export class AuthService {
     private readonly cacheService: CacheService
   ) { }
 
-  async signUp(createUserDto: CreateUserDto): Promise<void> {
+  async signUp(createUserDto: CreateUserDto, req: Request): Promise<void> {
     const { role } = createUserDto;
     const roleData = await this.userRoleRepository.getRoleByName(role);
 
+    if (role === RolesConstant.STUDENT) {
+      throw new BadRequestException('Only UK university emails ending in .ac.uk are allowed.');
+    } else if (
+      [RolesConstant.ADMIN, RolesConstant.BUSINESS, RolesConstant.BUSINESS_ADMIN].includes(role)
+    ) {
+      throw new BadRequestException('Public email domains are not allowed. Please use a business email address.');
+    }
     const user = await this.usersRepository.registerAccount(createUserDto, roleData);
 
     const token = this.generateConfirmationToken(user);
 
-    await this.sendConfirmationEmail(user.email, token);
+    await this.sendConfirmationEmail(user.email, token, req);
   }
 
   async confirmAccount(token: string): Promise<{ message: string }> {
@@ -72,8 +80,8 @@ export class AuthService {
       <div style="text-align: center; margin-bottom: 20px;">
         <img src="https://via.placeholder.com/150x50?text=Company+Logo" alt="Company Logo" style="height: 50px;">
       </div>
-      <h2 style="color: #0056b3;">Welcome, ${result.user.firstName}!</h2>
-      <p>Thank you for opening a new account with us. We're thrilled to have you on board and look forward to supporting your journey.</p>
+      <h2 style="color: #0056b3;">Welcome, ${result.user.profile.firstName}!</h2>
+      <p>Thank you for opening a new account with us. We're thrilled to have you on board and look forward to supporting your journey. Kindly update your profile.</p>
       <p>If you have any questions, feel free to reach out to our support team at any time.</p>
       <p style="margin-top: 30px;">Best regards,<br><strong>The Team</strong></p>
     </div>
@@ -83,19 +91,32 @@ export class AuthService {
     return result;
   }
 
+  async resendVerificationEmail(resendVerificationDto: ResendVerificationDto, req: Request): Promise<void> {
+    const { email } = resendVerificationDto;
+    const user = await this.usersRepository.getUserByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+    const token = this.generateConfirmationToken(user);
+    await this.sendConfirmationEmail(user.email, token, req);
+  }
+
   async getLoginOTP(authCredentialsDto: AuthCredentialsDto, roleType?: string) {
     const { email, password } = authCredentialsDto;
     const normalizedEmail = email.toLowerCase();
 
     const user = await this.usersRepository.getUserByEmail(normalizedEmail);
 
-    if (roleType && user.userRole.name !== roleType) {
+    if (!user || (roleType && user.userRole.name !== roleType)) {
       throw new UnauthorizedException(
         'Wrong email/password. Please check your login credentials.',
       );
     }
 
-    if (!user.isConfirmed) {
+    if (!user.isEmailVerified) {
       throw new ForbiddenException(
         'This account is yet to be confirmed. Request a confirmation email.',
       );
@@ -111,10 +132,10 @@ export class AuthService {
 
     delete user.password;
 
-    const { phoneNumber, email: _email } = user;
+    const { email: _email } = user;
 
     const token = await this.otpService.generateOtp(
-      { phoneNumber },
+      { email },
       user,
     );
 
@@ -147,7 +168,7 @@ export class AuthService {
       );
     }
 
-    if (!user.isConfirmed) {
+    if (!user.isEmailVerified) {
       throw new ForbiddenException(
         'This account is yet to be confirmed. Request a confirmation email.',
       );
@@ -199,7 +220,7 @@ export class AuthService {
     return { message: 'Successfully logged out' };
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto, req: Request) {
     const { email } = forgotPasswordDto;
 
     const user = await this.usersRepository.getUserByEmail(email);
@@ -211,7 +232,8 @@ export class AuthService {
 
     await this.cacheService.set(`reset-password:${user.id}`, resetToken, 60 * 15);
 
-    const resetLink = `http://localhost:3000/api/v1/auth/reset-password?token=${resetToken}&userId=${user.id}`;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const resetLink = `${baseUrl}/api/v1/auth/reset-password?token=${resetToken}&userId=${user.id}`;
 
     // const templatePath = join(__dirname, 'common/templates', 'templates', 'reset-password.html');
     // let html = readFileSync(templatePath, 'utf8');
@@ -356,8 +378,9 @@ export class AuthService {
     });
   }
 
-  private async sendConfirmationEmail(email: string, token: string): Promise<void> {
-    const confirmationUrl = `http://localhost:3000/api/v1/auth/student/confirm?token=${token}`;
+  private async sendConfirmationEmail(email: string, token: string, req: Request): Promise<void> {
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const confirmationUrl = `${baseUrl}/api/v1/auth/student/confirm?token=${token}`;
 
     await this.emailService.sendMail({
       to: email,
@@ -369,17 +392,6 @@ export class AuthService {
         <a href="${confirmationUrl}">${confirmationUrl}</a>
       `,
     })
-  }
-
-  async saveUpdate(id: string, dto: UpdateUserDto) {
-    if (dto.photo) {
-      const buffer = Buffer.from(dto.photo, 'base64');
-      dto.photo = buffer;
-    }
-    await this.usersRepository.saveUpdate(id, dto);
-    return {
-      message: 'User data updated successfully'
-    }
   }
 
   async assignPrivilege(assignPrivilegeDto: AssignPrivilegeDto) {
@@ -410,5 +422,14 @@ export class AuthService {
     } catch (error) {
 
     }
+  }
+
+  async getMyProfile(userId: string) {
+    const user = await this.usersRepository.findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    delete user.password;
+    return user;
   }
 }

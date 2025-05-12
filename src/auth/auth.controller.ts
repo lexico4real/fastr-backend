@@ -24,63 +24,18 @@ import { PrivilegesGuard } from './guards/privileges.guard';
 import { PrivilegesConstant } from 'common/enums/privileges';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { NewPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) { }
 
-  @HttpCode(200)
-  @Post('otp')
-  getLoginOTP(
-    @Body() authCredentialsDto: AuthCredentialsDto
-  ) {
-    return this.authService.getLoginOTP(authCredentialsDto);
-  }
-
-  @HttpCode(200)
-  @Post('login')
-  validateLoginOtp(
-    @Body() authCredentialsDto: AuthCredentialsDto,
-    @Session() session?: any,
-  ): Promise<{ accessToken: string }> {
-    return this.authService.signIn(authCredentialsDto, session);
-  }
-
   @UseGuards(AuthGuard())
-  @Post('logout')
-  async logout(@Req() req: Request) {
+  @Get('me')
+  async getMyProfile(@Req() req: Request) {
     const userId = req.user['id'];
-    const token = req.headers.authorization?.split(' ')[1];
-
-    return await this.authService.logout(userId, token);
-  }
-
-  @Post('forgot-password')
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return await this.authService.forgotPassword(forgotPasswordDto);
-  }
-
-  @Post('reset-password')
-  async resetPassword(@Body() newPasswordDto: NewPasswordDto, @Query() resetPasswordDto: ResetPasswordDto) {
-    return await this.authService.resetPassword(resetPasswordDto, newPasswordDto);
-  }
-
-  @HttpCode(200)
-  @Post('otp/:admin')
-  getLoginOTPAdmin(
-    @Param('admin') admin: string,
-    @Body() authCredentialsDto: AuthCredentialsDto
-  ) {
-    return this.authService.getLoginOTP(authCredentialsDto, admin);
-  }
-
-  @Post('user/role')
-  @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
-  @ApiBearerAuth('token')
-  async createRole(@Body() accessDto: AccessDto) {
-    return await this.authService.createRole(accessDto);
+    return await this.authService.getMyProfile(userId);
   }
 
   @Get('users')
@@ -115,8 +70,13 @@ export class AuthController {
     return await this.authService.getAllRoles(page, perPage, search, req);
   }
 
-  @Get('student/confirm')
-  async confirmAccount(@Query('token') token: string): Promise<{ message: string }> {
+  @Get('student/verify-university-email')
+  async confirmAccountStud(@Query('token') token: string): Promise<{ message: string }> {
+    return this.authService.confirmAccount(token);
+  }
+
+  @Get('student/verify-student-email')
+  async confirmAccountBiz(@Query('token') token: string): Promise<{ message: string }> {
     return this.authService.confirmAccount(token);
   }
 
@@ -144,6 +104,64 @@ export class AuthController {
     return await this.authService.getRoleById(id);
   }
 
+  @HttpCode(200)
+  @Post('otp')
+  getLoginOTP(
+    @Body() authCredentialsDto: AuthCredentialsDto
+  ) {
+    return this.authService.getLoginOTP(authCredentialsDto);
+  }
+
+  @HttpCode(200)
+  @Post('login')
+  validateLoginOtp(
+    @Body() authCredentialsDto: AuthCredentialsDto,
+    @Session() session?: any,
+  ): Promise<{ accessToken: string }> {
+    return this.authService.signIn(authCredentialsDto, session);
+  }
+
+  @UseGuards(AuthGuard())
+  @Post('logout')
+  async logout(@Req() req: Request) {
+    const userId = req.user['id'];
+    const token = req.headers.authorization?.split(' ')[1];
+
+    return await this.authService.logout(userId, token);
+  }
+
+  @Post('resend-verification')
+  async resendVerification(@Body() resendVerificationDto: ResendVerificationDto, @Req() req: Request) {
+    return await this.authService.resendVerificationEmail(resendVerificationDto, req);
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto, @Req() req: Request) {
+    return await this.authService.forgotPassword(forgotPasswordDto, req);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() newPasswordDto: NewPasswordDto, @Query() resetPasswordDto: ResetPasswordDto) {
+    return await this.authService.resetPassword(resetPasswordDto, newPasswordDto);
+  }
+
+  @HttpCode(200)
+  @Post('otp/:admin')
+  getLoginOTPAdmin(
+    @Param('admin') admin: string,
+    @Body() authCredentialsDto: AuthCredentialsDto
+  ) {
+    return this.authService.getLoginOTP(authCredentialsDto, admin);
+  }
+
+  @Post('user/role')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
+  @ApiBearerAuth('token')
+  async createRole(@Body() accessDto: AccessDto) {
+    return await this.authService.createRole(accessDto);
+  }
+
   @Post('role/privilege')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_CREATE_PRIVILEGE)
@@ -162,16 +180,33 @@ export class AuthController {
 
   @Post('register/staff')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_VIEW_USERS)
+  @Privileges(PrivilegesConstant.CAN_CREATE_STAFF)
   @ApiBearerAuth('token')
   @ApiBearerAuth('token')
-  registerStaff(@Body() createUserDto: CreateUserDto): Promise<void> {
-    return this.authService.signUp(createUserDto);
+  registerStaff(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
+    createUserDto.role = RolesConstant.BUSINESS;
+    return this.authService.signUp(createUserDto, req);
+  }
+
+  @Post('register/admin')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_CREATE_ADMIN)
+  @ApiBearerAuth('token')
+  @ApiBearerAuth('token')
+  registerAdmin(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
+    createUserDto.role = RolesConstant.ADMIN;
+    return this.authService.signUp(createUserDto, req);
   }
 
   @Post('register/student')
-  registerStudent(@Body() createUserDto: CreateUserDto): Promise<void> {
+  signUpAsAStudent(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
     createUserDto.role = RolesConstant.STUDENT;
-    return this.authService.signUp(createUserDto);
+    return this.authService.signUp(createUserDto, req);
+  }
+
+  @Post('register/business')
+  signUpAsABusiness(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
+    createUserDto.role = RolesConstant.BUSINESS_ADMIN;
+    return this.authService.signUp(createUserDto, req);
   }
 }

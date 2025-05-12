@@ -9,13 +9,13 @@ export class OtpService {
   private NODE_ENV = process.env.NODE_ENV;
 
   async generateOtp(otpDto: OtpDto, user: any) {
-    const { phoneNumber } = otpDto;
+    const { email } = otpDto;
 
     const secret = generateRandomValue('alphanumeric', 32);
 
     let otp: any;
     if (
-      phoneNumber?.includes('8020796658') &&
+      email?.includes('lexico4real@gmail.com') &&
       this.NODE_ENV !== 'production'
     ) {
       otp = '000000';
@@ -24,7 +24,7 @@ export class OtpService {
     }
 
     const key = `${this.NODE_ENV}_${otp}_${secret}`;
-    const value = JSON.stringify({ otp, phoneNumber });
+    const value = JSON.stringify({ otp, email });
     await this.cacheService.set(key, value, 6 * 60);
 
     return { otp, secret };

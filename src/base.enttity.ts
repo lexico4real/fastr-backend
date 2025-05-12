@@ -6,16 +6,22 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class BaseEntity {
+export abstract class BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', select: false })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', select: false })
   updatedAt: Date;
 
-  @DeleteDateColumn()
+  @DeleteDateColumn({ type: 'timestamp', nullable: true, select: false })
   deletedAt: Date;
+
+  @Column({ nullable: true })
+  createdBy?: string;
+
+  @Column({ nullable: true })
+  updatedBy?: string;
 }

@@ -17,6 +17,9 @@ import { ApplicationModule } from './application/application.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PaymentModule } from './payment/payment.module';
 import { StripeModule } from 'nestjs-stripe';
+import { BusinessModule } from './business/business.module';
+import { RequestContextService } from './request-context/request-context.service';
+import { BaseEntitySubscriber } from './subscribers/base-entity.subscriber';
 
 @Module({
   imports: [
@@ -50,8 +53,9 @@ import { StripeModule } from 'nestjs-stripe';
     ApplicationModule,
     PaymentModule,
     StripeModule,
+    BusinessModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RequestContextService, BaseEntitySubscriber],
 })
 export class AppModule {}

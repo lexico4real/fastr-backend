@@ -10,6 +10,8 @@ import { TransformInterceptor } from 'config/interceptors/transform.interceptor'
 import { SeedService } from './seed/seed.service';
 import { TrimInputPipe } from 'config/validations';
 import { json, urlencoded } from 'express';
+import { RequestContextService } from './request-context/request-context.service';
+import { RequestContextInterceptor } from './request-context/request-context.interceptor';
 
 async function bootstrap() {
   const cluster = new ClusterConfig();
@@ -36,6 +38,9 @@ async function bootstrap() {
   app.use(compression());
   app.use(json({ limit: '100mb' }));
   app.use(urlencoded({ extended: true, limit: '100mb' }));
+
+  const contextService = app.get(RequestContextService);
+  app.useGlobalInterceptors(new RequestContextInterceptor(contextService));
 
   app.useGlobalInterceptors(new TransformInterceptor());
   app.enableShutdownHooks();

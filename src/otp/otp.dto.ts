@@ -7,5 +7,5 @@ export class OtpDto {
 
   @IsString()
   @IsNotEmpty()
-  phoneNumber: string;
+  email: string;
 }

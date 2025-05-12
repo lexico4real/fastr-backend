@@ -60,7 +60,7 @@ export class UserRepository extends Repository<User> {
       throw new NotFoundException('User not found');
     }
 
-    user.isConfirmed = true;
+    user.isEmailVerified = true;
     user.accountStatus = AccountStatus.ACTIVE;
     await this.save(user);
 
@@ -71,17 +71,16 @@ export class UserRepository extends Repository<User> {
     if (!isEmail(email)) {
       throw new BadRequestException('This is not a valid email.');
     }
-    const user = await this.findOne({
+    try {
+      const user = await this.findOne({
       where: { email },
       relations: ['userRole', 'userRole.userPrivileges']
     });
 
-    if (!user) {
-      throw new NotFoundException(
-        'Wrong email/password. Please check your login credentials',
-      );
-    }
     return user;
+    } catch (error) {
+      throw new Error('Something went wrong')
+    }
   }
 
   async findUserById(id: string): Promise<User> {
@@ -92,24 +91,6 @@ export class UserRepository extends Repository<User> {
       });
     } catch (error) {
       throw new Error('Something went wrong')
-    }
-  }
-
-  async saveUpdate(id: string, dto: UpdateUserDto) {
-    const { phoneNumber, photo } = dto;
-    try {
-      const result = await this.createQueryBuilder()
-        .update(User)
-        .set({
-          phoneNumber,
-          photo,
-          updatedAt: new Date(),
-        })
-        .where('id = :id', { id })
-        .execute();
-    } catch (error) {
-      console.error(error);
-      throw new InternalServerErrorException('Failed to update user');
     }
   }
 }
