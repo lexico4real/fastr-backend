@@ -121,13 +121,21 @@ export class AuthController {
     return this.authService.signIn(authCredentialsDto, session);
   }
 
-  @UseGuards(AuthGuard())
-  @Post('logout')
-  async logout(@Req() req: Request) {
-    const userId = req.user['id'];
-    const token = req.headers.authorization?.split(' ')[1];
+  @Post('refresh-token')
+  async refreshAccessToken(
+    @Body('refreshToken') refreshToken: string,
+  ): Promise<{ accessToken: string }> {
+    return this.authService.refreshAccessToken(refreshToken);
+  }
 
-    return await this.authService.logout(userId, token);
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth('token')
+  @Post('logout')
+  async logout(
+    @Body('refreshToken') refreshToken: string,
+  ): Promise<{ message: string }> {
+    await this.authService.logout(refreshToken);
+    return { message: 'Logged out successfully' };
   }
 
   @Post('resend-verification')
@@ -182,7 +190,6 @@ export class AuthController {
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_CREATE_STAFF)
   @ApiBearerAuth('token')
-  @ApiBearerAuth('token')
   registerStaff(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
     createUserDto.role = RolesConstant.BUSINESS;
     return this.authService.signUp(createUserDto, req);
@@ -191,7 +198,6 @@ export class AuthController {
   @Post('register/admin')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_CREATE_ADMIN)
-  @ApiBearerAuth('token')
   @ApiBearerAuth('token')
   registerAdmin(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
     createUserDto.role = RolesConstant.ADMIN;

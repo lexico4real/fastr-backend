@@ -93,7 +93,6 @@ export class PaymentService {
     invoice.paidAt = new Date();
     invoice.updatedAt = new Date();
 
-    console.log({ invoice });
     await this.invoiceRepository.save(invoice);
   }
 

@@ -1,5 +1,5 @@
 import { IsIn, IsString } from "class-validator";
-import ApplicationStatus from "common/enums/application-status";
+import { ApplicationStatus } from "common/enums/application-status";
 
 export class UpdateApplicationStatusDto {
   @IsString()

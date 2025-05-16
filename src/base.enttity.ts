@@ -19,9 +19,9 @@ export abstract class BaseEntity {
   @DeleteDateColumn({ type: 'timestamp', nullable: true, select: false })
   deletedAt: Date;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, select: false })
   createdBy?: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, select: false })
   updatedBy?: string;
 }

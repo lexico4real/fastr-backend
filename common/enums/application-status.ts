@@ -1,4 +1,4 @@
-enum ApplicationStatus {
+export enum ApplicationStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
@@ -9,5 +9,3 @@ enum ApplicationStatus {
   OFFER_REJECTED = 'OFFER_REJECTED',
   WITHDRAWN = 'WITHDRAWN',
 }
-
-export default ApplicationStatus;

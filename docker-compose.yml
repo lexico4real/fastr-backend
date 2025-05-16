@@ -2,50 +2,62 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: development  # Switch to "production" for deployment
     container_name: fastr-backend
     ports:
       - '3000:3000'
     depends_on:
-      - fastr-db
-      - fastr-cache-house
+      fastr-db:
+        condition: service_healthy
+      fastr-cache-house:
+        condition: service_healthy
     env_file:
       - .env
     networks:
       - fastr-network
-    restart: always
+    restart: unless-stopped
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
-    command: npm run start:dev
+    # For production, remove volumes and use:
+    # command: ["dumb-init", "node", "dist/main.js"]
 
   fastr-db:
-    image: postgres:15
+    image: postgres:15-alpine
     container_name: fastr-postgres
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-    ports:
-      - '5432:5432'
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
       - fastr-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     command: ["postgres", "-c", "listen_addresses=*"]
 
   fastr-cache-house:
-    image: redis:7
+    image: redis:7-alpine
     container_name: fastr-redis
-    restart: always
-    ports:
-      - '6379:6379'
+    restart: unless-stopped
     networks:
       - fastr-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   fastr-network:
+    driver: bridge
 
 volumes:
   db-data:

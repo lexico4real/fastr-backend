@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from 'src/base.enttity';
 import { Application } from 'src/application/entities/application.entity';
 import { Business } from 'src/business/entities/business.entity';
+import { JobStatus } from 'common/enums/job-status';
 
 @Entity()
 export class Job extends BaseEntity {
@@ -29,6 +30,9 @@ export class Job extends BaseEntity {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ default: JobStatus.OPEN })
+  status: string;
 
   @Column({ type: 'timestamp', nullable: true })
   closedAt: Date;

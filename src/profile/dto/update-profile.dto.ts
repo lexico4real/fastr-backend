@@ -39,6 +39,10 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  workPermit?: string;
+
+  @IsOptional()
+  @IsString()
   profilePhotoUrl?: string;
 
   @IsOptional()

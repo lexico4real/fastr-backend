@@ -155,7 +155,7 @@ export class AuthService {
   async signIn(
     authCredentialsDto: AuthCredentialsDto,
     session: any,
-  ): Promise<{ accessToken: any }> {
+  ): Promise<{ accessToken: string, refreshToken: string } & User> {
     const { email, password, secret, otp } = authCredentialsDto;
 
     const normalizedEmail = email.toLowerCase();
@@ -199,6 +199,10 @@ export class AuthService {
 
     const accessToken: string = await this.jwtService.sign(payload);
 
+    const refreshToken = await this.jwtService.sign(payload, {
+      expiresIn: '7d',
+    });
+
     delete user.password;
 
     session.currentUser = {
@@ -206,18 +210,52 @@ export class AuthService {
     };
 
     await this.cacheService.set(`session:${user.id}:${accessToken}`, 'active', 60 * 60 * 24);
+    await this.cacheService.set(`refresh:${user.id}:${refreshToken}`, 'active', 60 * 60 * 24 * 7);
 
-    return { accessToken, ...user };
+    return { accessToken, refreshToken, ...user };
   }
 
-  async logout(userId: string, token: string) {
-    if (!token) {
-      throw new Error('No token provided');
+  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+    let payload: JwtPayload;
+
+    try {
+      payload = this.jwtService.verify(refreshToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    await this.cacheService.delete(`session:${userId}:${token}`);
+    const user = await this.usersRepository.getUserByEmail(payload.email);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
 
-    return { message: 'Successfully logged out' };
+    const isValid = await this.cacheService.get(`refresh:${user.id}:${refreshToken}`);
+    if (isValid !== 'active') {
+      throw new UnauthorizedException('Refresh token is invalid or has been revoked');
+    }
+
+    const newAccessToken = this.jwtService.sign(
+      { email: user.email, role: user.userRole },
+      { expiresIn: '15m' },
+    );
+
+    await this.cacheService.set(
+      `session:${user.id}:${newAccessToken}`,
+      'active',
+      60 * 60 * 24,
+    );
+
+    return { accessToken: newAccessToken };
+  }
+
+  async logout(refreshToken: string): Promise<void> {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      const user = await this.usersRepository.getUserByEmail(payload.email);
+      if (user) {
+        await this.cacheService.delete(`refresh:${user.id}:${refreshToken}`);
+      }
+    } catch {}
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto, req: Request) {

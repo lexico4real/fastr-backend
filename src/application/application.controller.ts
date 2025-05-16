@@ -24,7 +24,9 @@ export class ApplicationsController {
     return await this.applicationsService.apply(userId, applyDto);
   }
 
-  @Get('my-applications')
+  @Get('mine')
+  @UseGuards(AuthGuard())
+  @ApiBearerAuth('token')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
   async getMyApplications(
@@ -39,6 +41,7 @@ export class ApplicationsController {
   @Get('received')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_VIEW_RECEIVED_APPLICATIONS)
+  @ApiBearerAuth('token')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
   async getReceivedApplications(
@@ -51,11 +54,14 @@ export class ApplicationsController {
   }
 
   @Get(':applicationId/applied')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(PrivilegesConstant.CAN_VIEW_ANY_APPLICATION)
+  @ApiBearerAuth('token')
   async getApplication(@Param('applicationId') applicationId: string) {
     return await this.applicationsService.getApplication(applicationId);
   }
 
-  @Patch(':applicationId/update-status')
+  @Patch(':applicationId/status')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_UPDATE_APPLICATION_STATUS)
   async updateStatus(
