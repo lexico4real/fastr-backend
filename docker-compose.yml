@@ -13,6 +13,8 @@ services:
         condition: service_healthy
       fastr-cache-house:
         condition: service_healthy
+      fastr-mongodb:
+        condition: service_healthy
     env_file:
       - .env
     networks:
@@ -55,9 +57,30 @@ services:
       timeout: 5s
       retries: 5
 
+  fastr-mongodb:
+    image: mongo:7.0
+    container_name: fastr-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - fastr-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 networks:
   fastr-network:
     driver: bridge
 
 volumes:
   db-data:
+  mongo-data:

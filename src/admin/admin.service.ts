@@ -7,9 +7,12 @@ import { Invoice } from 'src/payment/entities/invoice.entity';
 import { AccountStatus } from 'common/enums/account-status';
 import { IdVerificationStatus } from 'common/enums/id-verification-status';
 import { Business } from 'src/business/entities/business.entity';
+import Logger from 'config/logger';
 
 @Injectable()
 export class AdminService {
+  private logger: Logger;
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -22,7 +25,9 @@ export class AdminService {
 
     @InjectRepository(Business)
     private businessRepository: Repository<Business>,
-  ) {}
+  ) {
+    this.logger = new Logger();
+  }
 
   async getAllUsers(): Promise<User[]> {
     try {
@@ -30,7 +35,12 @@ export class AdminService {
         relations: ['userRole', 'profile', 'business'],
       });
     } catch (error) {
-      console.error('Error fetching all users:', error);
+      this.logger.log(
+        'AdminService',
+        'error',
+        `Error fetching all users: ${error.message}`,
+        'admin-service',
+      );
       throw new Error('Failed to fetch users');
     }
   }
@@ -39,7 +49,12 @@ export class AdminService {
     try {
       return await this.jobRepository.find({ relations: ['business'] });
     } catch (error) {
-      console.error('Error fetching all jobs:', error);
+      this.logger.log(
+        'AdminService',
+        'error',
+        `Error fetching all jobs: ${error.message}`,
+        'admin-service',
+      );
       throw new Error('Failed to fetch jobs');
     }
   }
@@ -50,7 +65,12 @@ export class AdminService {
         relations: ['businesses', 'users'],
       });
     } catch (error) {
-      console.error('Error fetching all transactions:', error);
+      this.logger.log(
+        'AdminService',
+        'error',
+        `Error fetching all transactions: ${error.message}`,
+        'admin-service',
+      );
       throw new Error('Failed to fetch transactions');
     }
   }
@@ -66,7 +86,12 @@ export class AdminService {
       await this.userRepository.save(student);
       return true;
     } catch (error) {
-      console.error('Error verifying student:', error);
+      this.logger.log(
+        'AdminService',
+        'error',
+        `Error verifying student: ${error.message}`,
+        'admin-service',
+      );
       throw new Error('Failed to verify student');
     }
   }
@@ -78,7 +103,12 @@ export class AdminService {
         IdVerificationStatus.APPROVED,
       );
     } catch (error) {
-      console.error('Error verifying business:', error);
+      this.logger.log(
+        'AdminService',
+        'error',
+        `Error verifying business: ${error.message}`,
+        'admin-service',
+      );
       throw new Error('Failed to verify business');
     }
   }
@@ -97,7 +127,12 @@ export class AdminService {
       await this.jobRepository.manager.save(business);
       return true;
     } catch (error) {
-      console.error('Error updating business verification status:', error);
+      this.logger.log(
+        'AdminService',
+        'error',
+        `Error updating business verification status: ${error.message}`,
+        'admin-service',
+      );
       throw new Error('Failed to update business verification status');
     }
   }

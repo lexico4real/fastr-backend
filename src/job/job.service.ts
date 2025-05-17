@@ -9,9 +9,12 @@ import { OtpService } from 'src/otp/otp.service';
 import { CacheService } from 'src/cache/cache.service';
 import { Job } from './entities/job.entity';
 import { isUUID } from 'class-validator';
+import Logger from 'config/logger';
 
 @Injectable()
 export class JobService {
+  private readonly logger = new Logger();
+
   constructor(
     @InjectRepository(JobRepository)
     private jobRepository: JobRepository,
@@ -27,23 +30,29 @@ export class JobService {
     @Req() req: Request
   ) {
     try {
+      this.logger.log('JobService', 'info', 'Fetching all jobs', 'job-service');
       return await this.jobRepository.getAllJobs(page, perPage, search, req);
     } catch (error) {
+      this.logger.log('JobService', 'error', `Failed to fetch jobs: ${error.message}`, 'job-service');
       throw new InternalServerErrorException('Failed to fetch jobs');
     }
   }
 
   async getJobById(jobId: string): Promise<Job> {
     if (!isUUID(jobId)) {
+      this.logger.log('JobService', 'warn', 'Invalid Job ID', 'job-service');
       throw new BadRequestException('Invalid Job ID');
     }
     try {
+      this.logger.log('JobService', 'info', `Fetching job by ID: ${jobId}`, 'job-service');
       const job = await this.jobRepository.getJobById(jobId);
       if (!job) {
+        this.logger.log('JobService', 'warn', 'Job not found', 'job-service');
         throw new NotFoundException('Job not found');
       }
       return job;
     } catch (error) {
+      this.logger.log('JobService', 'error', `Failed to fetch job by ID: ${error.message}`, 'job-service');
       throw error instanceof BadRequestException || error instanceof NotFoundException
         ? error
         : new InternalServerErrorException('Failed to fetch job by ID');
@@ -52,6 +61,7 @@ export class JobService {
 
   async createJob(user: any, createJobDto: CreateJobDto): Promise<Job> {
     try {
+      this.logger.log('JobService', 'info', `Creating job for user: ${user.id}`, 'job-service');
       const job = this.jobRepository.create({
         ...createJobDto,
         businessId: user.id,
@@ -77,6 +87,7 @@ export class JobService {
       });
       return result;
     } catch (error) {
+      this.logger.log('JobService', 'error', `Failed to create job: ${error.message}`, 'job-service');
       throw new InternalServerErrorException('Failed to create job');
     }
   }
@@ -87,8 +98,10 @@ export class JobService {
     updateJobDto: UpdateJobDto,
   ): Promise<Job> {
     try {
+      this.logger.log('JobService', 'info', `Updating job with ID: ${jobId}`, 'job-service');
       const job = await this.getJobById(jobId);
       if (!job || job.businessId !== user.id) {
+        this.logger.log('JobService', 'warn', 'Job not found or user not authorized', 'job-service');
         throw new NotFoundException('Job not found or user not authorized');
       }
       Object.assign(job, updateJobDto);
@@ -113,6 +126,7 @@ export class JobService {
       });
       return result;
     } catch (error) {
+      this.logger.log('JobService', 'error', `Failed to update job: ${error.message}`, 'job-service');
       throw error instanceof NotFoundException
         ? error
         : new InternalServerErrorException('Failed to update job');
@@ -121,8 +135,10 @@ export class JobService {
 
   async deleteJob(user: any, jobId: string): Promise<void> {
     try {
+      this.logger.log('JobService', 'info', `Deleting job with ID: ${jobId}`, 'job-service');
       const job = await this.getJobById(jobId);
       if (!job || job.businessId !== user.id) {
+        this.logger.log('JobService', 'warn', 'Job not found or user not authorized', 'job-service');
         throw new NotFoundException('Job not found or user not authorized');
       }
       await this.jobRepository.deleteJob(job);
@@ -144,6 +160,7 @@ export class JobService {
         html,
       });
     } catch (error) {
+      this.logger.log('JobService', 'error', `Failed to delete job: ${error.message}`, 'job-service');
       throw error instanceof NotFoundException
         ? error
         : new InternalServerErrorException('Failed to delete job');
@@ -157,8 +174,10 @@ export class JobService {
     @Req() req?: Request,
   ) {
     try {
+      this.logger.log('JobService', 'info', `Fetching job postings for user: ${userId}`, 'job-service');
       return await this.jobRepository.getMyJobPostings(userId, page, perPage, req);
     } catch (error) {
+      this.logger.log('JobService', 'error', `Failed to fetch job postings: ${error.message}`, 'job-service');
       throw new InternalServerErrorException('Failed to fetch job postings');
     }
   }
@@ -170,8 +189,10 @@ export class JobService {
     @Req() req?: Request,
   ) {
     try {
+      this.logger.log('JobService', 'info', `Fetching job applications for user: ${userId}`, 'job-service');
       return await this.jobRepository.getMyJobApplications(userId, page, perPage, req);
     } catch (error) {
+      this.logger.log('JobService', 'error', `Failed to fetch job applications: ${error.message}`, 'job-service');
       throw new InternalServerErrorException('Failed to fetch job applications');
     }
   }

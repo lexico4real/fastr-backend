@@ -8,9 +8,12 @@ import { PaymentStatus } from 'common/enums/payment-status';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { Invoice } from './entities/invoice.entity';
 import { Repository } from 'typeorm';
+import Logger from 'config/logger';
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger();
+
   constructor(
     @InjectRepository(Invoice)
     private invoiceRepository: Repository<Invoice>,
@@ -26,8 +29,11 @@ export class PaymentService {
         amount: dto.amount,
         status: PaymentStatus.PENDING,
       });
-      return await this.invoiceRepository.save(invoice);
+      const savedInvoice = await this.invoiceRepository.save(invoice);
+      this.logger.log('PaymentService', 'info', 'Invoice created successfully', 'payment-service');
+      return savedInvoice;
     } catch (error) {
+      this.logger.log('PaymentService', 'error', 'Failed to create invoice', 'payment-service');
       throw new InternalServerErrorException('Failed to create invoice');
     }
   }
@@ -39,9 +45,11 @@ export class PaymentService {
       });
 
       if (!invoice) {
+        this.logger.log('PaymentService', 'warn', 'Invoice not found', 'payment-service');
         throw new NotFoundException('Invoice not found');
       }
       if (invoice.status === PaymentStatus.COMPLETED) {
+        this.logger.log('PaymentService', 'warn', 'Invoice already paid', 'payment-service');
         throw new ForbiddenException('Invoice already paid');
       }
 
@@ -54,24 +62,29 @@ export class PaymentService {
         },
       });
 
+      this.logger.log('PaymentService', 'info', 'Payment intent created successfully', 'payment-service');
       return {
         clientSecret: paymentIntent.client_secret,
       };
     } catch (error) {
+      this.logger.log('PaymentService', 'error', 'Failed to process payment', 'payment-service');
       throw new InternalServerErrorException('Failed to process payment');
     }
   }
 
   async getInvoices(userId: string) {
     try {
-      return await this.invoiceRepository.find({
+      const invoices = await this.invoiceRepository.find({
         where: [
           { businessId: userId },
           { studentId: userId },
         ],
         order: { createdAt: 'DESC' },
       });
+      this.logger.log('PaymentService', 'info', 'Invoices retrieved successfully', 'payment-service');
+      return invoices;
     } catch (error) {
+      this.logger.log('PaymentService', 'error', 'Failed to retrieve invoices', 'payment-service');
       throw new InternalServerErrorException('Failed to retrieve invoices');
     }
   }
@@ -82,21 +95,27 @@ export class PaymentService {
         where: { id: invoiceId },
       });
       if (!invoice) {
+        this.logger.log('PaymentService', 'warn', 'Invoice not found', 'payment-service');
         throw new NotFoundException('Invoice not found');
       }
+      this.logger.log('PaymentService', 'info', 'Invoice retrieved successfully', 'payment-service');
       return invoice;
     } catch (error) {
+      this.logger.log('PaymentService', 'error', 'Failed to retrieve invoice', 'payment-service');
       throw new InternalServerErrorException('Failed to retrieve invoice');
     }
   }
 
   async getPaymentHistory(studentId: string) {
     try {
-      return await this.invoiceRepository.find({
+      const history = await this.invoiceRepository.find({
         where: { studentId, status: PaymentStatus.COMPLETED },
         order: { paidAt: 'DESC' },
       });
+      this.logger.log('PaymentService', 'info', 'Payment history retrieved successfully', 'payment-service');
+      return history;
     } catch (error) {
+      this.logger.log('PaymentService', 'error', 'Failed to retrieve payment history', 'payment-service');
       throw new InternalServerErrorException('Failed to retrieve payment history');
     }
   }
@@ -108,6 +127,7 @@ export class PaymentService {
       });
 
       if (!invoice) {
+        this.logger.log('PaymentService', 'warn', 'Invoice not found', 'payment-service');
         throw new NotFoundException('Invoice not found');
       }
 
@@ -116,7 +136,9 @@ export class PaymentService {
       invoice.updatedAt = new Date();
 
       await this.invoiceRepository.save(invoice);
+      this.logger.log('PaymentService', 'info', 'Invoice marked as paid successfully', 'payment-service');
     } catch (error) {
+      this.logger.log('PaymentService', 'error', 'Failed to mark invoice as paid', 'payment-service');
       throw new InternalServerErrorException('Failed to mark invoice as paid');
     }
   }
@@ -129,9 +151,11 @@ export class PaymentService {
       });
 
       if (!invoice) {
+        this.logger.log('PaymentService', 'warn', 'Invoice not found', 'payment-service');
         throw new NotFoundException('Invoice not found');
       }
       if (invoice.status === PaymentStatus.COMPLETED) {
+        this.logger.log('PaymentService', 'warn', 'Invoice already paid', 'payment-service');
         throw new NotFoundException('Invoice already paid');
       }
 
@@ -158,10 +182,12 @@ export class PaymentService {
         },
       });
 
+      this.logger.log('PaymentService', 'info', 'Checkout session created successfully', 'payment-service');
       return {
         url: session.url,
       };
     } catch (error) {
+      this.logger.log('PaymentService', 'error', 'Failed to create checkout session', 'payment-service');
       throw new InternalServerErrorException('Failed to create checkout session');
     }
   }

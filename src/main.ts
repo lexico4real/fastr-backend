@@ -12,6 +12,7 @@ import { TrimInputPipe } from 'config/validations';
 import { json, urlencoded } from 'express';
 import { RequestContextService } from './request-context/request-context.service';
 import { RequestContextInterceptor } from './request-context/request-context.interceptor';
+import { HttpErrorFilter } from 'config/logger/http-error.filter';
 
 async function bootstrap() {
   const cluster = new ClusterConfig();
@@ -43,6 +44,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new RequestContextInterceptor(contextService));
 
   app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalFilters(new HttpErrorFilter());
   app.enableShutdownHooks();
   if (process.env.NODE_ENV !== 'production') {
     await app.get(SeedService).seed();

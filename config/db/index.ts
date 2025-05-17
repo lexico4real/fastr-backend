@@ -18,6 +18,14 @@ export const getTypeOrmConfig = (
     migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
     autoLoadEntities: true,
     subscribers: [BaseEntitySubscriber],
+    extra: {
+      connectionLimit: 20,
+      insecureAuth: true,
+      waitForConnections: true,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
+      idleTimeOut: 30000,
+    }
   };
 
   if (databaseUrl) {

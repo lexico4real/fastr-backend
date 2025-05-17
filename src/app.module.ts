@@ -24,6 +24,8 @@ import { RatingModule } from './rating/rating.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AdminModule } from './admin/admin.module';
+import { mongooseConfig } from 'config/db/mongoose';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -38,6 +40,9 @@ import { AdminModule } from './admin/admin.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) =>
         getTypeOrmConfig(configService),
+    }),
+    MongooseModule.forRootAsync({
+      useFactory: async () => mongooseConfig,
     }),
     RedisModule,
     BullModule.forRoot({

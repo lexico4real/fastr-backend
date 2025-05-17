@@ -12,9 +12,12 @@ import * as QRCode from 'qrcode';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { OtpService } from 'src/otp/otp.service';
 import { isUUID } from 'class-validator';
+import Logger from 'config/logger';
 
 @Injectable()
 export class AttendanceService {
+  private readonly logger = new Logger();
+
   constructor(
     @InjectRepository(Attendance)
     private attendanceRepository: Repository<Attendance>,
@@ -23,21 +26,34 @@ export class AttendanceService {
   ) {}
 
   async clockIn(jobId: string, userId: string) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Jod ID');
+    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
     if (!isUUID(userId)) throw new BadRequestException('Invalid User ID');
     try {
-      return await this.attendanceRepository.save({
+      const result = await this.attendanceRepository.save({
         job: { id: jobId },
         userId,
         clockIn: new Date(),
       });
+      this.logger.log(
+        'attendance',
+        'info',
+        `User ${userId} clocked in for job ${jobId}`,
+        'attendance-service',
+      );
+      return result;
     } catch (error) {
+      this.logger.log(
+        'attendance',
+        'error',
+        `Failed to clock in for user ${userId} and job ${jobId}: ${error.message}`,
+        'attendance-service',
+      );
       throw new BadRequestException('Failed to clock in');
     }
   }
 
   async clockOut(jobId: string, userId: string) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Jod ID');
+    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
     if (!isUUID(userId)) throw new BadRequestException('Invalid User ID');
     try {
       const record = await this.attendanceRepository.findOne({
@@ -46,8 +62,21 @@ export class AttendanceService {
 
       if (!record) throw new NotFoundException('No active clock-in found');
       record.clockOut = new Date();
-      return await this.attendanceRepository.save(record);
+      const result = await this.attendanceRepository.save(record);
+      this.logger.log(
+        'attendance',
+        'info',
+        `User ${userId} clocked out for job ${jobId}`,
+        'attendance-service',
+      );
+      return result;
     } catch (error) {
+      this.logger.log(
+        'attendance',
+        'error',
+        `Failed to clock out for user ${userId} and job ${jobId}: ${error.message}`,
+        'attendance-service',
+      );
       throw error instanceof NotFoundException
         ? error
         : new BadRequestException('Failed to clock out');
@@ -59,7 +88,7 @@ export class AttendanceService {
     createAttendanceDto: CreateAttendanceDto,
     userId: string,
   ) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Jod ID');
+    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
     if (!isUUID(userId)) throw new BadRequestException('Invalid User ID');
     try {
       const { otp } = createAttendanceDto;
@@ -81,8 +110,20 @@ export class AttendanceService {
 
       record.clockIn = new Date();
       await this.attendanceRepository.save(record);
+      this.logger.log(
+        'attendance',
+        'info',
+        `User ${userId} clocked in via OTP for job ${jobId}`,
+        'attendance-service',
+      );
       return record;
     } catch (error) {
+      this.logger.log(
+        'attendance',
+        'error',
+        `Failed to clock in via OTP for user ${userId} and job ${jobId}: ${error.message}`,
+        'attendance-service',
+      );
       throw error instanceof UnauthorizedException
         ? error
         : new BadRequestException('Failed to clock in via OTP');
@@ -94,7 +135,7 @@ export class AttendanceService {
     createAttendanceDto: CreateAttendanceDto,
     userId: string,
   ) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Jod ID');
+    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
     if (!isUUID(userId)) throw new BadRequestException('Invalid User ID');
     try {
       const { otp } = createAttendanceDto;
@@ -106,8 +147,21 @@ export class AttendanceService {
         throw new UnauthorizedException('OTP expired or invalid');
 
       record.clockOut = new Date();
-      return await this.attendanceRepository.save(record);
+      const result = await this.attendanceRepository.save(record);
+      this.logger.log(
+        'attendance',
+        'info',
+        `User ${userId} clocked out via OTP for job ${jobId}`,
+        'attendance-service',
+      );
+      return result;
     } catch (error) {
+      this.logger.log(
+        'attendance',
+        'error',
+        `Failed to clock out via OTP for user ${userId} and job ${jobId}: ${error.message}`,
+        'attendance-service',
+      );
       throw error instanceof UnauthorizedException
         ? error
         : new BadRequestException('Failed to clock out via OTP');
@@ -115,7 +169,7 @@ export class AttendanceService {
   }
 
   async generateQRCode(jobId: string) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Jod ID');
+    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
     try {
       const job = await this.jobRepository.findOneBy({ id: jobId });
       if (!job) throw new NotFoundException('Job not found');
@@ -126,8 +180,20 @@ export class AttendanceService {
         issuedAt: new Date().toISOString(),
       });
       const qr = await QRCode.toDataURL(qrData);
+      this.logger.log(
+        'attendance',
+        'info',
+        `Generated QR code for job ${jobId}`,
+        'attendance-service',
+      );
       return { qrCode: qr };
     } catch (error) {
+      this.logger.log(
+        'attendance',
+        'error',
+        `Failed to generate QR code for job ${jobId}: ${error.message}`,
+        'attendance-service',
+      );
       throw error instanceof NotFoundException
         ? error
         : new BadRequestException('Failed to generate QR code');
@@ -135,7 +201,7 @@ export class AttendanceService {
   }
 
   async getAttendanceOtp(jobId: string, user: any) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Jod ID');
+    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
     try {
       const job = await this.jobRepository.findOneBy({ id: jobId });
       if (!job) throw new NotFoundException('Job not found');
@@ -161,8 +227,20 @@ export class AttendanceService {
         otpExpiresAt: expiresAt,
       });
 
+      this.logger.log(
+        'attendance',
+        'info',
+        `Generated OTP for user ${user.id} and job ${jobId}`,
+        'attendance-service',
+      );
       return { otp: token?.otp, expiresAt };
     } catch (error) {
+      this.logger.log(
+        'attendance',
+        'error',
+        `Failed to generate OTP for user ${user.id} and job ${jobId}: ${error.message}`,
+        'attendance-service',
+      );
       throw error instanceof NotFoundException
         ? error
         : new BadRequestException('Failed to generate attendance OTP');
