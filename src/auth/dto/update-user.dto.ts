@@ -9,12 +9,19 @@ import { AccountStatus } from 'common/enums/account-status';
 import { CreateUserDto } from './create-user.dto';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'The email address of the user',
+    example: 'user@example.com',
+  })
   @IsOptional()
   @IsEmail()
   email?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'The account status of the user',
+    example: AccountStatus.ACTIVE,
+    enum: AccountStatus,
+  })
   @IsOptional()
   @IsEnum(AccountStatus)
   accountStatus?: AccountStatus;

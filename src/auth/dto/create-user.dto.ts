@@ -12,21 +12,35 @@ import { AccountStatus } from 'common/enums/account-status';
 import { RolesConstant } from 'common/enums/roles';
 
 export class CreateUserDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The email address of the user',
+    example: 'user@example.com',
+  })
   @IsEmail()
   email: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'The account status of the user',
+    enum: AccountStatus,
+    example: AccountStatus.ACTIVE,
+  })
   @IsOptional()
   @IsEnum(AccountStatus)
   accountStatus?: AccountStatus;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'The role of the user',
+    enum: RolesConstant,
+    example: RolesConstant.ADMIN,
+  })
   @IsOptional()
   @IsEnum(RolesConstant)
   role?: RolesConstant;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The password for the user account',
+    example: 'P@ssw0rd123',
+  })
   @MinLength(8)
   @MaxLength(32)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,32}$/, {

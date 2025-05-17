@@ -3,6 +3,7 @@ import { BaseEntity } from 'src/base.enttity';
 import { Application } from 'src/application/entities/application.entity';
 import { Business } from 'src/business/entities/business.entity';
 import { JobStatus } from 'common/enums/job-status';
+import { Attendance } from 'src/attendance/entities/attendance.entity';
 
 @Entity()
 export class Job extends BaseEntity {
@@ -27,6 +28,9 @@ export class Job extends BaseEntity {
 
   @OneToMany(() => Application, application => application.job, { nullable: true })
   applications: Application[];
+
+  @OneToMany(() => Attendance, (attendance) => attendance.job)
+  attendances: Attendance[];
 
   @Column({ default: true })
   isActive: boolean;

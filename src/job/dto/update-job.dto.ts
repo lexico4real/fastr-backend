@@ -5,33 +5,33 @@ import { CreateJobDto } from './create-job.dto';
 import { JobStatus } from 'common/enums/job-status';
 
 export class UpdateJobDto extends PartialType(CreateJobDto) {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'The title of the job' })
   @IsOptional()
   @IsString()
   title?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'A brief description of the job' })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'The salary for the job', example: 50000 })
   @IsOptional()
   @IsNumber()
   salary?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'The location of the job' })
   @IsOptional()
   @IsString()
   location?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'The status of the job', enum: JobStatus })
   @IsOptional()
   @IsString()
   @IsIn(Object.values(JobStatus))
   status?: string;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ description: 'The date when the job is closed', type: String, format: 'date-time' })
   @IsOptional()
   @IsDate()
   @Type(() => Date)

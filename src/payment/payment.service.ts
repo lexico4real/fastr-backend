@@ -5,14 +5,15 @@ import { Request } from 'express';
 import Stripe from 'stripe';
 import { PayInvoiceDto } from './dto/pay-invoice.dto';
 import { PaymentStatus } from 'common/enums/payment-status';
-import { InvoiceRepository } from './repositories/invoice.repositories';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { Invoice } from './entities/invoice.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class PaymentService {
   constructor(
-    @InjectRepository(InvoiceRepository)
-    private readonly invoiceRepository: InvoiceRepository,
+    @InjectRepository(Invoice)
+    private invoiceRepository: Repository<Invoice>,
     @InjectStripe() private readonly stripeClient: Stripe
   ) { }
 

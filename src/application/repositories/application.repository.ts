@@ -25,7 +25,7 @@ export class ApplicationRepository extends Repository<Application> {
       });
     } catch (error) {
       throw new InternalServerErrorException(
-        'Some thing went wrong: APPR-ERROR',
+        'Something went wrong: APPR-ERROR',
       );
     }
   }
@@ -106,7 +106,7 @@ export class ApplicationRepository extends Repository<Application> {
       return await this.save(application);
     } catch (error) {
       throw new InternalServerErrorException(
-        'Some thing went wrong: APPR-ERROR',
+        'Something went wrong: APPR-ERROR',
       );
     }
   }

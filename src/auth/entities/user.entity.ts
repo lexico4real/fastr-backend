@@ -14,6 +14,7 @@ import { Job } from 'src/job/entities/job.entity';
 import { Application } from 'src/application/entities/application.entity';
 import { Profile } from 'src/profile/entities/profile.entity';
 import { Business } from 'src/business/entities/business.entity';
+import { Rating } from 'src/rating/entities/rating.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -43,4 +44,10 @@ export class User extends BaseEntity {
   @ManyToOne(() => Business, business => business.staff, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'businessId' })
   business: Business;
+
+  @OneToMany(() => Rating, rating => rating.rater)
+  ratingsGiven: Rating[];
+
+  @OneToMany(() => Rating, rating => rating.ratee)
+  ratingsReceived: Rating[];
 }

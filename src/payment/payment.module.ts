@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { PaymentController } from './payment.controller';
-import { InvoiceRepository } from './repositories/invoice.repositories';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Invoice } from './entities/invoice.entity';
 import { EmailModule } from 'src/email/email.module';
@@ -16,7 +15,7 @@ import { StripeController } from './stripe.controller';
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [PaymentController, StripeController],
-  providers: [PaymentService, InvoiceRepository],
+  providers: [PaymentService],
   exports: [PaymentService, TypeOrmModule],
 })
 export class PaymentModule { }
