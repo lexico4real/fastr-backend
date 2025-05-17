@@ -25,48 +25,80 @@ export class AdminService {
   ) {}
 
   async getAllUsers(): Promise<User[]> {
-    return this.userRepository.find({
-      relations: ['userRole', 'profile', 'business'],
-    });
+    try {
+      return await this.userRepository.find({
+        relations: ['userRole', 'profile', 'business'],
+      });
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      throw new Error('Failed to fetch users');
+    }
   }
 
   async getAllJobs(): Promise<Job[]> {
-    return this.jobRepository.find({ relations: ['business'] });
+    try {
+      return await this.jobRepository.find({ relations: ['business'] });
+    } catch (error) {
+      console.error('Error fetching all jobs:', error);
+      throw new Error('Failed to fetch jobs');
+    }
   }
 
   async getAllTransactions(): Promise<Invoice[]> {
-    return this.invoiceRepository.find({ relations: ['business', 'student'] });
+    try {
+      return await this.invoiceRepository.find({
+        relations: ['businesses', 'users'],
+      });
+    } catch (error) {
+      console.error('Error fetching all transactions:', error);
+      throw new Error('Failed to fetch transactions');
+    }
   }
 
   async verifyStudent(studentId: string): Promise<boolean> {
-    const student = await this.userRepository.findOne({
-      where: { id: studentId },
-    });
-    if (!student) return false;
+    try {
+      const student = await this.userRepository.findOne({
+        where: { id: studentId },
+      });
+      if (!student) return false;
 
-    student.accountStatus = AccountStatus.ACTIVE;
-    await this.userRepository.save(student);
-    return true;
+      student.accountStatus = AccountStatus.ACTIVE;
+      await this.userRepository.save(student);
+      return true;
+    } catch (error) {
+      console.error('Error verifying student:', error);
+      throw new Error('Failed to verify student');
+    }
   }
 
   async verifyBusiness(businessId: string): Promise<boolean> {
-    return this.updateBusinessVerificationStatus(
-      businessId,
-      IdVerificationStatus.APPROVED,
-    );
+    try {
+      return await this.updateBusinessVerificationStatus(
+        businessId,
+        IdVerificationStatus.APPROVED,
+      );
+    } catch (error) {
+      console.error('Error verifying business:', error);
+      throw new Error('Failed to verify business');
+    }
   }
 
   private async updateBusinessVerificationStatus(
     id: string,
     status: IdVerificationStatus,
   ): Promise<boolean> {
-    const business = await this.businessRepository.findOne({
-      where: { id },
-    });
-    if (!business) return false;
+    try {
+      const business = await this.businessRepository.findOne({
+        where: { id },
+      });
+      if (!business) return false;
 
-    business.verificationStatus = status;
-    await this.jobRepository.manager.save(business);
-    return true;
+      business.verificationStatus = status;
+      await this.jobRepository.manager.save(business);
+      return true;
+    } catch (error) {
+      console.error('Error updating business verification status:', error);
+      throw new Error('Failed to update business verification status');
+    }
   }
 }

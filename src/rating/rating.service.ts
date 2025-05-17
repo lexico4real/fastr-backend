@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Rating } from './entities/rating.entity';
 import { Repository } from 'typeorm';
@@ -15,34 +19,56 @@ export class RatingService {
   ) {}
 
   async createRating(jobId: string, raterId: string, dto: CreateRatingDto) {
-    const job = await this.jobRepository.findOne({ where: { id: jobId } });
-    if (!job) throw new NotFoundException('Job not found');
+    try {
+      const job = await this.jobRepository.findOne({ where: { id: jobId } });
+      if (!job) throw new NotFoundException('Job not found');
 
-    const ratee = await this.userRepository.findOne({ where: { id: dto.rateeId } });
-    if (!ratee) throw new NotFoundException('Ratee not found');
+      const ratee = await this.userRepository.findOne({
+        where: { id: dto.rateeId },
+      });
+      if (!ratee) throw new NotFoundException('Ratee not found');
 
-    const rating = this.ratingRepository.create({
-      ...dto,
-      raterId,
-      rateeId: dto.rateeId,
-      jobId,
-    });
+      const rating = this.ratingRepository.create({
+        ...dto,
+        raterId,
+        rateeId: dto.rateeId,
+        jobId,
+      });
 
-    return this.ratingRepository.save(rating);
+      return await this.ratingRepository.save(rating);
+    } catch (error) {
+      throw error instanceof NotFoundException
+        ? error
+        : new InternalServerErrorException('Failed to create rating');
+    }
   }
 
   async getRatingsForStudent(studentId: string) {
-    return this.ratingRepository.find({ where: { rateeId: studentId } });
+    try {
+      return await this.ratingRepository.find({
+        where: { rateeId: studentId },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to fetch ratings for student',
+      );
+    }
   }
 
   async getRatingsForBusiness(businessId: string) {
-    const businessUsers = await this.userRepository.find({
-      where: { business: { id: businessId } },
-    });
+    try {
+      const businessUsers = await this.userRepository.find({
+        where: { business: { id: businessId } },
+      });
 
-    const businessUserIds = businessUsers.map(u => u.id);
-    return this.ratingRepository.find({
-      where: businessUserIds.map(id => ({ rateeId: id })),
-    });
+      const businessUserIds = businessUsers.map((u) => u.id);
+      return await this.ratingRepository.find({
+        where: businessUserIds.map((id) => ({ rateeId: id })),
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to fetch ratings for business',
+      );
+    }
   }
 }

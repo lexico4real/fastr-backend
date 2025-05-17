@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException, Req, InternalServerErrorException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Req,
+  InternalServerErrorException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from 'express';
 import { Repository } from 'typeorm';
 import { ApplyDto } from './dto/apply.dto';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
-import { Application } from './entities/application.entity';
 import { Job } from 'src/job/entities/job.entity';
 import { ApplicationRepository } from './repositories/application.repository';
 import { generatePagination } from 'common/utils/pagination';
@@ -17,40 +23,67 @@ export class ApplicationsService {
     private readonly applicationRepository: ApplicationRepository,
     @InjectRepository(Job)
     private readonly jobRepository: Repository<Job>,
-  ) { }
+  ) {}
 
   async apply(studentId: string, applyDto: ApplyDto) {
-    const { jobId } = applyDto;
+    try {
+      const { jobId } = applyDto;
 
-    const job = await this.jobRepository.findOne({ where: { id: jobId } });
-    if (!job) {
-      throw new NotFoundException('Job not found');
+      const job = await this.jobRepository.findOne({ where: { id: jobId } });
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
+      if (job.businessId === studentId) {
+        throw new ForbiddenException('You cannot apply to your own job');
+      }
+      return await this.applicationRepository.apply(studentId, jobId);
+    } catch (error) {
+      console.error(error);
+      throw error instanceof NotFoundException
+        ? error
+        : error instanceof ForbiddenException
+          ? new ForbiddenException()
+          : new InternalServerErrorException('Failed to apply for the job');
     }
-    if (job.businessId === studentId) {
-      throw new ForbiddenException('You cannot apply to your own job');
-    }
-    return await this.applicationRepository.apply(studentId, jobId);
   }
 
   async getApplication(applicationId: string) {
     if (!isUUID(applicationId)) {
       throw new BadRequestException('Invalid Application ID');
     }
-    const application = await this.applicationRepository.getApplication(applicationId);
-    if (!application) {
-      throw new NotFoundException('Application not found');
+    try {
+      const application =
+        await this.applicationRepository.getApplication(applicationId);
+      if (!application) {
+        throw new NotFoundException('Application not found');
+      }
+      return application;
+    } catch (error) {
+      throw error instanceof NotFoundException
+        ? error
+        : new InternalServerErrorException(
+            'Failed to retrieve the application',
+          );
     }
-    return application;
   }
 
   async updateStatus(applicationId: string, dto: UpdateApplicationStatusDto) {
-    const application = await this.applicationRepository.getApplication(applicationId);
-    if (!application) {
-      throw new NotFoundException('Application not found');
-    }
+    try {
+      const application =
+        await this.applicationRepository.getApplication(applicationId);
+      if (!application) {
+        throw new NotFoundException('Application not found');
+      }
 
-    application.status = dto.status;
-    return await this.applicationRepository.updateStatus(application);
+      application.status = dto.status;
+      return await this.applicationRepository.updateStatus(application);
+    } catch (error) {
+      throw error instanceof NotFoundException
+        ? error
+        : new InternalServerErrorException(
+            'Failed to update application status',
+          );
+    }
   }
 
   async getMyApplications(
@@ -62,7 +95,16 @@ export class ApplicationsService {
     if (!isUUID(studentId)) {
       throw new BadRequestException('Invalid Student ID');
     }
-    return await this.applicationRepository.getMyApplications(studentId, page, perPage, req);
+    try {
+      return await this.applicationRepository.getMyApplications(
+        studentId,
+        page,
+        perPage,
+        req,
+      );
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to retrieve applications');
+    }
   }
 
   async getReceivedApplications(
@@ -71,6 +113,9 @@ export class ApplicationsService {
     perPage = 10,
     @Req() req?: Request,
   ) {
+    if (!isUUID(businessId)) {
+    throw new BadRequestException('Invalid Business ID');
+    }
     try {
       const skip = (page - 1) * perPage;
 
@@ -82,7 +127,7 @@ export class ApplicationsService {
         take: perPage,
       });
 
-      const applications = jobs.flatMap(job => job.applications);
+      const applications = jobs.flatMap((job) => job.applications);
 
       return generatePagination(page, perPage, total, req, applications);
     } catch (error) {

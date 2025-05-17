@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthService } from 'src/auth/auth.service';
 import { User } from 'src/auth/entities/user.entity';
@@ -14,44 +19,60 @@ export class ProfileService {
     private readonly profileRepository: Repository<Profile>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) { }
+  ) {}
 
   async getProfile(userId: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('User not found');
+    try {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      delete user.password;
+      return user;
+    } catch (error) {
+      throw error instanceof NotFoundException
+        ? error
+        : new InternalServerErrorException('Failed to retrieve user profile');
     }
-    delete user.password;
-    return user;
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto): Promise<Profile> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ['profile'],
-    });
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['profile'],
+      });
 
-    if (!user) throw new NotFoundException('User not found');
+      if (!user) throw new NotFoundException('User not found');
 
-    const profile = user.profile;
+      const profile = user.profile;
 
-    if (!profile) throw new NotFoundException('Profile not found');
+      if (!profile) throw new NotFoundException('Profile not found');
 
-    Object.assign(profile, dto);
+      Object.assign(profile, dto);
 
-    return this.profileRepository.save(profile);
+      return await this.profileRepository.save(profile);
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to update profile');
+    }
   }
 
   async getProfileById(id: string) {
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid user ID provided');
     }
-    const profile = await this.profileRepository.findOne({ where: { id } });
+    try {
+      const profile = await this.profileRepository.findOne({ where: { id } });
 
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
+      if (!profile) {
+        throw new NotFoundException('Profile not found');
+      }
+
+      return profile;
+    } catch (error) {
+      throw error instanceof NotFoundException
+        ? error
+        : new InternalServerErrorException('Failed to retrieve profile by ID');
     }
-
-    return profile;
   }
 }
