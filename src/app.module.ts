@@ -22,6 +22,8 @@ import { RequestContextService } from './request-context/request-context.service
 import { BaseEntitySubscriber } from './subscribers/base-entity.subscriber';
 import { RatingModule } from './rating/rating.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -58,6 +60,8 @@ import { AttendanceModule } from './attendance/attendance.module';
     BusinessModule,
     RatingModule,
     AttendanceModule,
+    AnalyticsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, RequestContextService, BaseEntitySubscriber],
