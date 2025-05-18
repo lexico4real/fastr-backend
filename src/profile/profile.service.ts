@@ -5,13 +5,13 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AuthService } from 'src/auth/auth.service';
 import { User } from 'src/auth/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
 import { Profile } from './entities/profile.entity';
 import Logger from 'config/logger';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 @Injectable()
 export class ProfileService {
@@ -61,6 +61,20 @@ export class ProfileService {
         throw new NotFoundException('Profile not found');
       }
 
+      if (dto.profilePhotoUrl) {
+        try {
+          const uploadResult = await cloudinary.uploader.upload(dto.profilePhotoUrl, {
+            folder: 'profile_photos',
+            public_id: `user_${userId}`,
+            overwrite: true,
+          });
+          dto.profilePhotoUrl = uploadResult.secure_url;
+        } catch (uploadError) {
+          this.logger.log('ProfileService', 'error', `Failed to upload profile photo: ${uploadError.message}`, 'profile-service');
+          throw new InternalServerErrorException('Failed to upload profile photo');
+        }
+      }
+
       Object.assign(profile, dto);
 
       const updatedProfile = await this.profileRepository.save(profile);
@@ -69,29 +83,6 @@ export class ProfileService {
     } catch (error) {
       this.logger.log('ProfileService', 'error', `Failed to update profile: ${error.message}`, 'profile-service');
       throw new InternalServerErrorException('Failed to update profile');
-    }
-  }
-
-  async getProfileById(id: string) {
-    if (!isUUID(id)) {
-      this.logger.log('ProfileService', 'error', 'Invalid user ID provided', 'profile-service');
-      throw new BadRequestException('Invalid user ID provided');
-    }
-    try {
-      const profile = await this.profileRepository.findOne({ where: { id } });
-
-      if (!profile) {
-        this.logger.log('ProfileService', 'error', 'Profile not found', 'profile-service');
-        throw new NotFoundException('Profile not found');
-      }
-
-      this.logger.log('ProfileService', 'info', `Retrieved profile by ID: ${id}`, 'profile-service');
-      return profile;
-    } catch (error) {
-      this.logger.log('ProfileService', 'error', `Failed to retrieve profile by ID: ${error.message}`, 'profile-service');
-      throw error instanceof NotFoundException
-        ? error
-        : new InternalServerErrorException('Failed to retrieve profile by ID');
     }
   }
 }

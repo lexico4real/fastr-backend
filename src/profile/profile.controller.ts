@@ -31,7 +31,7 @@ export class ProfileController {
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_VIEW_USER_PROFILE)
   async getProfileById(@Param('id') id: string) {
-    return await this.profileService.getProfileById(id);
+    return await this.profileService.getProfile(id);
   }
 
   // profile privacy

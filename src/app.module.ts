@@ -26,6 +26,8 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AdminModule } from './admin/admin.module';
 import { mongooseConfig } from 'config/db/mongoose';
 import { MongooseModule } from '@nestjs/mongoose';
+import { UploadModule } from './upload/upload.module';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -41,9 +43,12 @@ import { MongooseModule } from '@nestjs/mongoose';
       useFactory: (configService: ConfigService) =>
         getTypeOrmConfig(configService),
     }),
-    MongooseModule.forRootAsync({
-      useFactory: async () => mongooseConfig,
+    MulterModule.register({
+      dest: './image_uploads',
     }),
+    // MongooseModule.forRootAsync({
+    //   useFactory: async () => mongooseConfig,
+    // }),
     RedisModule,
     BullModule.forRoot({
       redis: {
@@ -67,8 +72,13 @@ import { MongooseModule } from '@nestjs/mongoose';
     AttendanceModule,
     AnalyticsModule,
     AdminModule,
+    UploadModule,
   ],
   controllers: [AppController],
-  providers: [AppService, RequestContextService, BaseEntitySubscriber],
+  providers: [
+    AppService,
+    RequestContextService,
+    BaseEntitySubscriber,
+  ],
 })
 export class AppModule {}
