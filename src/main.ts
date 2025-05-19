@@ -19,7 +19,6 @@ async function bootstrap() {
   const cors = new CorsConfig();
   const doc = new SwaggerConfig();
   const app = await NestFactory.create(AppModule);
-  console.log(process.env)
 
   app.use(
     '/api/v1/payments/stripe/fastr-webhook',

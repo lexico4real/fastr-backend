@@ -1,5 +1,6 @@
-import { IsUUID } from 'class-validator';
+import { IsArray, IsUUID, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class PayInvoiceDto {
   @ApiProperty({
@@ -8,4 +9,11 @@ export class PayInvoiceDto {
   })
   @IsUUID()
   invoiceId: string;
+}
+
+export class BulkPayInvoiceDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PayInvoiceDto)
+  payments: PayInvoiceDto[];
 }

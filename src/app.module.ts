@@ -46,9 +46,9 @@ import { MulterModule } from '@nestjs/platform-express';
     MulterModule.register({
       dest: './image_uploads',
     }),
-    // MongooseModule.forRootAsync({
-    //   useFactory: async () => mongooseConfig,
-    // }),
+    MongooseModule.forRootAsync({
+      useFactory: async () => mongooseConfig,
+    }),
     RedisModule,
     BullModule.forRoot({
       redis: {

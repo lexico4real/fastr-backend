@@ -29,5 +29,8 @@ export class Invoice extends BaseEntity {
   status: PaymentStatus;
 
   @Column({ nullable: true })
+  jobId: string;
+
+  @Column({ nullable: true })
   paidAt: Date;
 }

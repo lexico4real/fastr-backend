@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, UseGuards, Param, Req } from '@nestjs/common';
+import { Body, Controller, Get, Patch, UseGuards, Param, Req, Post, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { Request } from 'express';
 import { ProfileService } from './profile.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -8,13 +8,18 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrivilegesGuard } from 'src/auth/guards/privileges.guard';
 import { PrivilegesConstant } from 'common/enums/privileges';
 import { Privileges } from 'src/auth/decorators/privileges.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadService } from 'src/upload/upload.service';
 
 @Controller('profile')
 @ApiTags('profile')
 @UseGuards(AuthGuard())
 @ApiBearerAuth('token')
 export class ProfileController {
-  constructor(private readonly profileService: ProfileService) { }
+  constructor(
+    private readonly profileService: ProfileService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Get('me')
   async getProfile(@GetUser() user: any) {
@@ -22,7 +27,10 @@ export class ProfileController {
   }
 
   @Patch('update')
-  async updateProfile(@Req() req: Request, @Body() updateProfileDto: UpdateProfileDto) {
+  async updateProfile(
+    @Req() req: Request,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
     const userId = req.user['id'];
     return this.profileService.updateProfile(userId, updateProfileDto);
   }
@@ -34,11 +42,28 @@ export class ProfileController {
     return await this.profileService.getProfile(id);
   }
 
+  @Patch('profile-image')
+  @UseGuards(AuthGuard())
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadProfileImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    const userId = req.user['id'];
+    const result = await this.uploadService.uploadImage(file);
+    return this.profileService.updateProfile(userId, {
+      profilePhotoUrl: result.secure_url,
+    });
+  }
+
   // profile privacy
   @Patch('privacy')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @Privileges(PrivilegesConstant.CAN_UPDATE_PROFILE_PRIVACY)
-  async updateProfilePrivacy(@GetUser() user: any, @Body() updateProfileDto: UpdateProfileDto) {
+  async updateProfilePrivacy(
+    @GetUser() user: any,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
     return this.profileService.updateProfile(user.id, updateProfileDto);
   }
 }

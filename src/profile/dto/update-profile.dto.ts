@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsArray, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsArray, IsBoolean, IsUrl } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -54,7 +54,7 @@ export class UpdateProfileDto {
 
   @ApiPropertyOptional({ description: 'Profile photo URL of the user', type: String })
   @IsOptional()
-  @IsString()
+  @IsUrl()
   profilePhotoUrl?: string;
 
   @ApiPropertyOptional({ description: 'Indicates if the profile is public', type: Boolean })
