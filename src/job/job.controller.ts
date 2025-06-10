@@ -9,6 +9,7 @@ import {
   Req,
   Patch,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JobService } from './job.service';
@@ -17,13 +18,13 @@ import { UpdateJobDto } from './dto/update-job.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PrivilegesGuard } from 'src/auth/guards/privileges.guard';
 import { Privileges } from 'src/auth/decorators/privileges.decorator';
-import { PrivilegesConstant } from 'common/enums/privileges';
+import { AllPrivileges } from 'common/enums/privileges';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('jobs')
 @Controller('jobs')
 export class JobController {
-  constructor(private readonly jobService: JobService) { }
+  constructor(private readonly jobService: JobService) {}
 
   @Get('explore')
   @ApiQuery({ name: 'page', required: false })
@@ -33,14 +34,14 @@ export class JobController {
     @Query('page') page: number,
     @Query('perPage') perPage: number,
     @Query('search') search: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     return this.jobService.getAllJobs(page, perPage, search, req);
   }
 
   @ApiBearerAuth('token')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_GET_JOBS_POSTED)
+  @Privileges(AllPrivileges.CAN_GET_JOBS_POSTED)
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
   @Get('my-postings')
@@ -49,13 +50,12 @@ export class JobController {
     @Query('perPage') perPage: number,
     @Req() req?: Request,
   ) {
-    const userId = req.user['id'];
-    return this.jobService.getMyJobPostings(userId, page, perPage, req);
+    return this.jobService.getMyJobPostings(page, perPage, req);
   }
 
   @ApiBearerAuth('token')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_APPLY_FOR_JOB)
+  @Privileges(AllPrivileges.CAN_APPLY_FOR_JOB)
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
   @Get('my-applications')
@@ -64,13 +64,12 @@ export class JobController {
     @Query('perPage') perPage: number,
     @Req() req?: Request,
   ) {
-    const userId = req.user['id'];
-    return this.jobService.getMyJobApplications(userId, page, perPage, req);
+    return this.jobService.getMyJobApplications(page, perPage, req);
   }
 
   @ApiBearerAuth('token')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_JOB)
+  @Privileges(AllPrivileges.CAN_CREATE_JOB)
   @Post('create')
   async createJob(@Req() req: Request, @Body() createJobDto: CreateJobDto) {
     const user = req.user;
@@ -80,27 +79,43 @@ export class JobController {
   // 9044811783
   @ApiBearerAuth('token')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_UPDATE_JOB)
+  @Privileges(AllPrivileges.CAN_UPDATE_JOB)
   @Patch(':jobId/update')
   async updateJob(
     @Req() req: Request,
-    @Param('jobId') jobId: string,
+    @Param('jobId', ParseUUIDPipe) jobId: string,
     @Body() updateJobDto: UpdateJobDto,
   ) {
     const user = req.user;
     return await this.jobService.updateJob(user, jobId, updateJobDto);
   }
 
+  @ApiBearerAuth('token')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(AllPrivileges.CAN_UPDATE_JOB)
+  @Patch(':jobId/update/status')
+  async updateJobStatus(
+    @Req() req: Request,
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Body('status') status: string,
+  ) {
+    const user = req.user;
+    return await this.jobService.updateJobStatus(user, jobId, status);
+  }
+
   @Get('opening/:jobId')
-  async getJobById(@Param('jobId') jobId: string) {
+  async getJobById(@Param('jobId', ParseUUIDPipe) jobId: string) {
     return this.jobService.getJobById(jobId);
   }
 
   @ApiBearerAuth('token')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_DELETE_JOB)
+  @Privileges(AllPrivileges.CAN_DELETE_JOB)
   @Delete(':jobId')
-  async deleteJob(@Req() req: Request, @Param('jobId') jobId: string) {
+  async deleteJob(
+    @Req() req: Request,
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+  ) {
     const user = req.user;
     return this.jobService.deleteJob(user, jobId);
   }

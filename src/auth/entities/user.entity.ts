@@ -25,7 +25,11 @@ export class User extends BaseEntity {
   password: string;
 
   @Index('user_account_status_idx')
-  @Column({ type: 'enum', enum: AccountStatus, default: AccountStatus.INACTIVE })
+  @Column({
+    type: 'enum',
+    enum: AccountStatus,
+    default: AccountStatus.INACTIVE,
+  })
   accountStatus: AccountStatus;
 
   @Column({ default: false })
@@ -35,19 +39,25 @@ export class User extends BaseEntity {
   @JoinColumn({ name: 'userRoleId' })
   userRole: UserRole;
 
-  @OneToMany(() => Application, application => application.student)
+  @OneToMany(() => Application, (application) => application.student)
   applications: Application[];
 
-  @OneToOne(() => Profile, profile => profile.user, { cascade: true, eager: true })
+  @OneToOne(() => Profile, (profile) => profile.user, {
+    cascade: true,
+    eager: true,
+  })
   profile: Profile;
 
-  @ManyToOne(() => Business, business => business.staff, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Business, (business) => business.staff, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'businessId' })
   business: Business;
 
-  @OneToMany(() => Rating, rating => rating.rater)
+  @OneToMany(() => Rating, (rating) => rating.rater)
   ratingsGiven: Rating[];
 
-  @OneToMany(() => Rating, rating => rating.ratee)
+  @OneToMany(() => Rating, (rating) => rating.ratee)
   ratingsReceived: Rating[];
 }

@@ -26,7 +26,7 @@ const publicEmailDomains = [
   'mail.ru',
 ];
 
-function isBusinessEmail(email: string): boolean {
+export function isBusinessEmail(email: string): boolean {
   const domain = email.split('@')[1]?.toLowerCase();
   return domain ? !publicEmailDomains.includes(domain) : false;
 }

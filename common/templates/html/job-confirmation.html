@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" style="margin: 0; padding: 0;">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Application Received</title>
+  </head>
+  <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f3f2ef;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 40px 0;">
+      <tr>
+        <td align="center">
+          <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+            <!-- Header -->
+            <tr>
+              <td style="background-color: #0a66c2; padding: 20px 30px;">
+                <h2 style="color: #ffffff; font-size: 20px; margin: 0;">Application Received</h2>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding: 30px;">
+                <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                  Thank you for submitting your application.
+                </p>
+                <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                  Your application for the <strong>{{jobTitle}}</strong> role has been received. The hiring team is reviewing your submission and will reach out if your qualifications match the position’s requirements.
+                </p>
+                <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                  You can monitor the status of your application from your dashboard.
+                </p>
+                <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                  Thank you for your interest in opportunities with <strong>{{companyName}}</strong>.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="background-color: #f3f2ef; padding: 20px 30px; font-size: 12px; text-align: center; color: #777;">
+                For support, contact <a href="mailto:{{supportEmail}}" style="color: #0a66c2;">{{supportEmail}}</a><br />
+                &copy; {{year}} {{companyName}}. All rights reserved.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

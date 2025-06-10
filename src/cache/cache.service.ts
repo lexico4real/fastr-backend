@@ -28,6 +28,24 @@ export class CacheService {
     }
   }
 
+  async setList(
+    key: string,
+    data: (string | number)[],
+    ttl: number,
+  ): Promise<void> {
+    try {
+      await this.redisClient.del(key);
+      if (data.length > 0) {
+        await this.redisClient.rpush(key, ...data);
+      }
+      if (ttl > 0) {
+        await this.redisClient.expire(key, ttl);
+      }
+    } catch (e) {
+      this.logger.log(this.logName, 'error', e, this.logFileName);
+    }
+  }
+
   async getList(key: string): Promise<(string | number)[] | null> {
     try {
       return await this.redisClient.lrange(key, 0, -1);
@@ -103,6 +121,40 @@ export class CacheService {
     } catch (e) {
       this.logger.log(this.logName, 'error', e, this.logFileName);
       return null;
+    }
+  }
+
+  async hset(
+    key: string,
+    field: string,
+    value: string,
+    ttl: number,
+  ): Promise<void> {
+    try {
+      await this.redisClient.hset(key, field, value);
+      await this.redisClient.expire(key, ttl);
+    } catch (e) {
+      this.logger.log(this.logName, 'error', e, this.logFileName);
+    }
+  }
+
+  async hget(key: string, field: string): Promise<string | null> {
+    try {
+      return await this.redisClient.hget(key, field);
+    } catch (e) {
+      this.logger.log(this.logName, 'error', e, this.logFileName);
+      return null;
+    }
+  }
+
+  async deleteByPattern(pattern: string): Promise<void> {
+    try {
+      const keys = await this.redisClient.keys(`${pattern}*`);
+      if (keys.length > 0) {
+        await Promise.all(keys.map((k) => this.redisClient.del(k)));
+      }
+    } catch (e) {
+      this.logger.log(this.logName, 'error', e, this.logFileName);
     }
   }
 }

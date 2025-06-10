@@ -6,7 +6,7 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 
-function isUkAcademicEmail(email: string): boolean {
+export function isUkAcademicEmail(email: string): boolean {
   return typeof email === 'string' && email.toLowerCase().endsWith('.ac.uk');
 }
 

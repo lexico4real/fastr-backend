@@ -6,6 +6,7 @@ import {
   Get,
   UseGuards,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
@@ -21,18 +22,24 @@ export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
   @Post('clockin/:jobId/qr')
-  clockInViaQR(@Param('jobId') jobId: string, @Req() req: Request) {
+  clockInViaQR(
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Req() req: Request,
+  ) {
     return this.attendanceService.clockIn(jobId, req.user?.['id']);
   }
 
   @Post('clockout/:jobId/qr')
-  clockOutViaQR(@Param('jobId') jobId: string, @Req() req: Request) {
+  clockOutViaQR(
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Req() req: Request,
+  ) {
     return this.attendanceService.clockOut(jobId, req.user?.['id']);
   }
 
   @Post('clockin/:jobId/otp')
   clockInViaOTP(
-    @Param('jobId') jobId: string,
+    @Param('jobId', ParseUUIDPipe) jobId: string,
     @Body() createAttendanceDto: CreateAttendanceDto,
     @Req() req: Request,
   ) {
@@ -45,7 +52,7 @@ export class AttendanceController {
 
   @Post('clockout/:jobId/otp')
   clockOutViaOTP(
-    @Param('jobId') jobId: string,
+    @Param('jobId', ParseUUIDPipe) jobId: string,
     @Body() createAttendanceDto: CreateAttendanceDto,
     @Req() req: Request,
   ) {
@@ -57,12 +64,15 @@ export class AttendanceController {
   }
 
   @Get('jobs/:jobId/qr-code')
-  generateQRCode(@Param('jobId') jobId: string) {
+  generateQRCode(@Param('jobId', ParseUUIDPipe) jobId: string) {
     return this.attendanceService.generateQRCode(jobId);
   }
 
   @Post('jobs/:jobId/generate-otp')
-  getAttendanceOtp(@Param('jobId') jobId: string, @Req() req: Request) {
+  getAttendanceOtp(
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Req() req: Request,
+  ) {
     return this.attendanceService.getAttendanceOtp(jobId, req.user);
   }
 }

@@ -28,34 +28,26 @@ export class JobRepository extends Repository<Job> {
     }
   }
 
-  // async getMyJobApplications(userId: string): Promise<Job[]> {
-  //   const jobs = await this.createQueryBuilder('job')
-  //     .innerJoin('job.applications', 'application')
-  //     .where('application.studentId = :userId', { userId })
-  //     .getMany();
-
-  //   return jobs;
-  // }
-
   async getMyJobApplications(
-    userId: string,
     page = 1,
     perPage = 10,
     @Req() req?: Request,
   ) {
     try {
       const skip = (page - 1) * perPage;
+      const userId = req.user['id'];
 
       const [result, total] = await this.createQueryBuilder('job')
-        .innerJoin('job.applications', 'application')
+        .leftJoinAndSelect('job.applications', 'application')
         .where('application.studentId = :userId', { userId })
-        .orderBy('job.createdAt', 'DESC')
+        .orderBy('application.appliedAt', 'DESC')
         .skip(skip)
         .take(perPage)
         .getManyAndCount();
 
       return generatePagination(page, perPage, total, req, result);
     } catch (error) {
+      console.error('Error fetching job applications:', error);
       throw new InternalServerErrorException(
         'Something went wrong: JR-ERROR',
       );
@@ -84,6 +76,7 @@ export class JobRepository extends Repository<Job> {
 
       return generatePagination(page, perPage, total, req, result);
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException(
         'Some thing went wrong: JR-ERROR',
       );
@@ -116,17 +109,14 @@ export class JobRepository extends Repository<Job> {
     try {
       return await this.save(job);
     } catch (error) {
+      console.log({ error })
       throw new InternalServerErrorException(
         'Some thing went wrong: JR-ERROR',
       );
     }
   }
 
-  // async getMyJobPostings(userId: string): Promise<Job[]> {
-  //   return this.jobRepository.find({ where: { businessId: userId } });
-  // }
   async getMyJobPostings(
-    userId: string,
     page = 1,
     perPage = 10,
     @Req() req?: Request,
@@ -134,8 +124,10 @@ export class JobRepository extends Repository<Job> {
     try {
       const skip = (page - 1) * perPage;
 
+      const businessId = req.user?.['profile']?.businessId;
+
       const [result, total] = await this.findAndCount({
-        where: { businessId: userId },
+        where: { businessId },
         order: { createdAt: 'DESC' },
         skip,
         take: perPage,
@@ -148,6 +140,4 @@ export class JobRepository extends Repository<Job> {
       );
     }
   }
-
-  
 }

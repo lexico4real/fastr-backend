@@ -31,12 +31,12 @@ export class ApplicationRepository extends Repository<Application> {
   }
 
   async getMyApplications(
-    studentId: string,
     page = 1,
     perPage = 10,
     @Req() req?: Request,
   ) {
     try {
+      const studentId = req.user['id'];
       const skip = (page - 1) * perPage;
 
       const [result, total] = await this.findAndCount({
@@ -50,7 +50,7 @@ export class ApplicationRepository extends Repository<Application> {
       return generatePagination(page, perPage, total, req, result);
     } catch (error) {
       throw new InternalServerErrorException(
-        'Something went wrong: APPR-ERROR',
+        'Failed to retrieve applications',
       );
     }
   }
@@ -78,27 +78,33 @@ export class ApplicationRepository extends Repository<Application> {
       return generatePagination(page, perPage, total, req, result);
     } catch (error) {
       throw new InternalServerErrorException(
-        'Some thing went wrong: APPR-ERROR',
+        'Failed to retrieve applications',
       );
     }
   }
 
-  async apply(studentId: string, jobId: string): Promise<Application> {
+  async apply(student: any, job: any): Promise<Application> {
 
     const existingApplication = await this.findOne({
-      where: { jobId, studentId },
+      where: { jobId: job?.id, studentId: student?.id },
     });
 
     if (existingApplication) {
       throw new ForbiddenException('You have already applied for this job');
     }
 
-    const application = this.create({
-      jobId,
-      studentId,
-    });
+    try {
+      const application = this.create({
+        job,
+        student,
+      });
 
-    return await this.save(application);
+      return await this.save(application);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to create application',
+      );
+    }
   }
 
   async updateStatus(application: Application) {
@@ -106,7 +112,7 @@ export class ApplicationRepository extends Repository<Application> {
       return await this.save(application);
     } catch (error) {
       throw new InternalServerErrorException(
-        'Something went wrong: APPR-ERROR',
+        'Failed to update application status',
       );
     }
   }

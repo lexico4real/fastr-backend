@@ -26,8 +26,6 @@ export class AttendanceService {
   ) {}
 
   async clockIn(jobId: string, userId: string) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
-    if (!isUUID(userId)) throw new BadRequestException('Invalid User ID');
     try {
       const result = await this.attendanceRepository.save({
         job: { id: jobId },
@@ -53,8 +51,6 @@ export class AttendanceService {
   }
 
   async clockOut(jobId: string, userId: string) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
-    if (!isUUID(userId)) throw new BadRequestException('Invalid User ID');
     try {
       const record = await this.attendanceRepository.findOne({
         where: { job: { id: jobId }, userId, clockOut: null },
@@ -88,8 +84,6 @@ export class AttendanceService {
     createAttendanceDto: CreateAttendanceDto,
     userId: string,
   ) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
-    if (!isUUID(userId)) throw new BadRequestException('Invalid User ID');
     try {
       const { otp } = createAttendanceDto;
       const record = await this.attendanceRepository.findOne({
@@ -135,8 +129,6 @@ export class AttendanceService {
     createAttendanceDto: CreateAttendanceDto,
     userId: string,
   ) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
-    if (!isUUID(userId)) throw new BadRequestException('Invalid User ID');
     try {
       const { otp } = createAttendanceDto;
       const record = await this.attendanceRepository.findOne({
@@ -169,7 +161,6 @@ export class AttendanceService {
   }
 
   async generateQRCode(jobId: string) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
     try {
       const job = await this.jobRepository.findOneBy({ id: jobId });
       if (!job) throw new NotFoundException('Job not found');
@@ -201,7 +192,6 @@ export class AttendanceService {
   }
 
   async getAttendanceOtp(jobId: string, user: any) {
-    if (!isUUID(jobId)) throw new BadRequestException('Invalid Job ID');
     try {
       const job = await this.jobRepository.findOneBy({ id: jobId });
       if (!job) throw new NotFoundException('Job not found');

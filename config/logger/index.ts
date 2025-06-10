@@ -4,7 +4,7 @@ export default class Logger {
   log(
     logName: string,
     level?: string,
-    message?: string,
+    message?: any,
     fileName?: string,
   ): any {
     log4js.configure({

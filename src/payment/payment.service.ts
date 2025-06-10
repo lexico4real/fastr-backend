@@ -3,11 +3,14 @@ import {
   Injectable,
   NotFoundException,
   InternalServerErrorException,
+  Req,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectStripe } from 'nestjs-stripe';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Repository } from 'typeorm';
 import Stripe from 'stripe';
 import { Request } from 'express';
@@ -21,6 +24,9 @@ import { Invoice } from './entities/invoice.entity';
 import Logger from 'config/logger';
 import { InvoiceJobName, QueueName } from 'common/enums/job-constants';
 import { isUUID } from 'class-validator';
+import { generatePagination } from 'common/utils/pagination';
+import { renderEmailTemplate } from 'common/templates/renders/render-email-template';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class PaymentService {
@@ -32,6 +38,7 @@ export class PaymentService {
     @InjectStripe() private readonly stripeClient: Stripe,
     @InjectQueue(QueueName.INVOICE_QUEUE)
     private invoiceQueue: Queue,
+    private readonly emailService: EmailService,
   ) {}
 
   async createInvoice(businessId: string, dto: CreateInvoiceDto) {
@@ -62,28 +69,17 @@ export class PaymentService {
     }
   }
 
-  async payInvoice(studentId: string, dto: PayInvoiceDto) {
+  async payInvoice(user: any, dto: PayInvoiceDto) {
     try {
+      const studentId = user.id;
       const invoice = await this.invoiceRepository.findOne({
         where: { id: dto.invoiceId, studentId },
       });
 
       if (!invoice) {
-        this.logger.log(
-          'PaymentService',
-          'warn',
-          'Invoice not found',
-          'payment-service',
-        );
         throw new NotFoundException('Invoice not found');
       }
       if (invoice.status === PaymentStatus.COMPLETED) {
-        this.logger.log(
-          'PaymentService',
-          'warn',
-          'Invoice already paid',
-          'payment-service',
-        );
         throw new ForbiddenException('Invoice already paid');
       }
 
@@ -96,12 +92,30 @@ export class PaymentService {
         },
       });
 
-      this.logger.log(
-        'PaymentService',
-        'info',
-        'Payment intent created successfully',
-        'payment-service',
+      const template = fs.readFileSync(
+        path.join(__dirname, 'salary-payment.html'),
+        'utf8',
       );
+
+      const renderedHtml = renderEmailTemplate(template, {
+        jobTitle: invoice.description,
+        companyName: invoice?.business?.business?.businessName,
+        invoiceId: invoice.id,
+        amount: invoice.amount,
+        studentEmail: invoice?.student?.email,
+        paymentDate: new Date().toLocaleDateString(),
+        reference: paymentIntent.id,
+        supportEmail: 'support@fastr.com',
+        year: new Date().getFullYear(),
+      });
+
+      await this.emailService.sendMail({
+        to: invoice.business.email,
+        subject: 'Payment Initiated',
+        text: '',
+        html: renderedHtml,
+      });
+
       return {
         clientSecret: paymentIntent.client_secret,
       };
@@ -120,19 +134,17 @@ export class PaymentService {
     }
   }
 
-  async getInvoices(userId: string) {
+  async getInvoices(page = 1, perPage = 10, @Req() req?: Request) {
     try {
-      const invoices = await this.invoiceRepository.find({
+      const userId = req.user['id'];
+      const skip = (page - 1) * perPage;
+      const [invoices, total] = await this.invoiceRepository.findAndCount({
         where: [{ businessId: userId }, { studentId: userId }],
         order: { createdAt: 'DESC' },
+        skip,
+        take: perPage,
       });
-      this.logger.log(
-        'PaymentService',
-        'info',
-        'Invoices retrieved successfully',
-        'payment-service',
-      );
-      return invoices;
+      return generatePagination(page, perPage, total, req, invoices);
     } catch (error) {
       this.logger.log(
         'PaymentService',
@@ -186,19 +198,24 @@ export class PaymentService {
     }
   }
 
-  async getPaymentHistory(studentId: string) {
+  async getPaymentHistory(page = 1, perPage = 10, @Req() req?: Request) {
     try {
-      const history = await this.invoiceRepository.find({
+      const studentId = req.user['id'];
+      const skip = (page - 1) * perPage;
+      const [history, total] = await this.invoiceRepository.findAndCount({
         where: { studentId, status: PaymentStatus.COMPLETED },
         order: { paidAt: 'DESC' },
+        skip,
+        take: perPage,
       });
+
       this.logger.log(
         'PaymentService',
         'info',
         'Payment history retrieved successfully',
         'payment-service',
       );
-      return history;
+      return generatePagination(page, perPage, total, req, history);
     } catch (error) {
       this.logger.log(
         'PaymentService',
@@ -212,12 +229,17 @@ export class PaymentService {
     }
   }
 
-  async getStudentHistory(studentId: string) {
+  async getStudentHistory(page = 1, perPage = 10, @Req() req?: Request) {
     try {
-      return await this.invoiceRepository.find({
+      const studentId = req.user['id'];
+      const skip = (page - 1) * perPage;
+      const [history, total] = await this.invoiceRepository.findAndCount({
         where: { student: { id: studentId } },
         order: { createdAt: 'DESC' },
+        skip,
+        take: perPage,
       });
+      return generatePagination(page, perPage, total, req, history);
     } catch (error) {
       this.logger.log(
         'PaymentService',
@@ -231,12 +253,17 @@ export class PaymentService {
     }
   }
 
-  async getBusinessHistory(businessId: string) {
+  async getBusinessHistory(page = 1, perPage = 10, @Req() req?: Request) {
     try {
-      return await this.invoiceRepository.find({
+      const businessId = req.user['id'];
+      const skip = (page - 1) * perPage;
+      const [history, total] = await this.invoiceRepository.findAndCount({
         where: { business: { id: businessId } },
         order: { createdAt: 'DESC' },
+        skip,
+        take: perPage,
       });
+      return generatePagination(page, perPage, total, req, history);
     } catch (error) {
       this.logger.log(
         'PaymentService',
@@ -250,11 +277,21 @@ export class PaymentService {
     }
   }
 
-  async getAllInvoicesForBusiness(businessId: string) {
+  async getAllInvoicesForBusiness(
+    page = 1,
+    perPage = 10,
+    @Req() req?: Request,
+  ) {
     try {
-      return await this.invoiceRepository.find({
+      const businessId = req.user['id'];
+      const skip = (page - 1) * perPage;
+      const [invoices, total] = await this.invoiceRepository.findAndCount({
         where: { business: { id: businessId } },
+        order: { createdAt: 'DESC' },
+        skip,
+        take: perPage,
       });
+      return generatePagination(page, perPage, total, req, invoices);
     } catch (error) {
       this.logger.log(
         'PaymentService',
@@ -275,12 +312,6 @@ export class PaymentService {
       });
 
       if (!invoice) {
-        this.logger.log(
-          'PaymentService',
-          'warn',
-          'Invoice not found',
-          'payment-service',
-        );
         throw new NotFoundException('Invoice not found');
       }
 
@@ -289,12 +320,6 @@ export class PaymentService {
       invoice.updatedAt = new Date();
 
       await this.invoiceRepository.save(invoice);
-      this.logger.log(
-        'PaymentService',
-        'info',
-        'Invoice marked as paid successfully',
-        'payment-service',
-      );
     } catch (error) {
       this.logger.log(
         'PaymentService',
@@ -417,14 +442,14 @@ export class PaymentService {
     }
   }
 
-  async payBulkInvoices(userId: string, dto: BulkPayInvoiceDto) {
+  async payBulkInvoices(user: any, dto: BulkPayInvoiceDto) {
     try {
       const paid = [];
       const errors = [];
 
       for (const payment of dto.payments) {
         try {
-          const result = await this.payInvoice(userId, payment);
+          const result = await this.payInvoice(user, payment);
           paid.push(result);
         } catch (error) {
           errors.push({ payment, error: error.message });

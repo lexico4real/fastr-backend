@@ -6,6 +6,7 @@ import {
   Get,
   Req,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { RatingService } from './rating.service';
 import { CreateRatingDto } from './dto/create-rating.dto';
@@ -22,7 +23,7 @@ export class RatingController {
 
   @Post('student/:jobId')
   async rateStudent(
-    @Param('jobId') jobId: string,
+    @Param('jobId', ParseUUIDPipe) jobId: string,
     @Body() dto: CreateRatingDto,
     @Req() req: Request,
   ) {
@@ -39,12 +40,16 @@ export class RatingController {
   }
 
   @Get('student/:studentId')
-  async getStudentRatings(@Param('studentId') studentId: string) {
+  async getStudentRatings(
+    @Param('studentId', ParseUUIDPipe) studentId: string,
+  ) {
     return this.ratingService.getRatingsForStudent(studentId);
   }
 
   @Get('business/:businessId')
-  async getBusinessRatings(@Param('businessId') businessId: string) {
+  async getBusinessRatings(
+    @Param('businessId', ParseUUIDPipe) businessId: string,
+  ) {
     return this.ratingService.getRatingsForBusiness(businessId);
   }
 }

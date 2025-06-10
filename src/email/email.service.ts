@@ -42,10 +42,10 @@ export class EmailService {
     } catch (error) {
       console.error('Email sending failed:', error);
       this.logger.log(
-        'cluster',
+        'email',
         'info',
         `Master ${process.pid} is running`,
-        'cluster',
+        'email-service',
       );
       throw error;
     }

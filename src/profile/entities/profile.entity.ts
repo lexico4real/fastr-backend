@@ -2,7 +2,8 @@ import { IdVerificationStatus } from 'common/enums/id-verification-status';
 import { ProfileType } from 'common/enums/profile-type';
 import { User } from 'src/auth/entities/user.entity';
 import { BaseEntity } from 'src/base.enttity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Business } from 'src/business/entities/business.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, ManyToMany, ManyToOne } from 'typeorm';
 
 @Entity('profiles')
 export class Profile extends BaseEntity {
@@ -59,7 +60,21 @@ export class Profile extends BaseEntity {
   })
   profileType: ProfileType;
 
-  @OneToOne(() => User, user => user.profile)
+  @OneToOne(() => User, (user) => user.profile)
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @Column()
+  userId: string;
+
+  @ManyToOne(() => Business, (business) => business.profiles, {
+    eager: true,
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'businessId' })
+  business: Business;
+
+  @Column({ nullable: true })
+  businessId: string;
 }

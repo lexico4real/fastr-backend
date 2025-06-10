@@ -8,13 +8,21 @@ export class PaymentsProcessor {
 
   @Process('bulk-invoice')
   async handleBulkInvoice(job: Job) {
-    const { userId, invoices } = job.data;
-    return this.paymentService.createBulkInvoices(userId, { invoices });
+    try {
+      const { userId, invoices } = job.data;
+      return this.paymentService.createBulkInvoices(userId, { invoices });
+    } catch (error) {
+      console.error('Error processing bulk invoice job:', error);
+    }
   }
 
   @Process('bulk-payment')
   async handleBulkPayment(job: Job) {
-    const { userId, payments } = job.data;
-    return this.paymentService.payBulkInvoices(userId, { payments });
+    try {
+      const { userId, payments } = job.data;
+      return this.paymentService.payBulkInvoices(userId, { payments });
+    } catch (error) {
+      console.error('Error processing bulk payment job:', error);
+    }
   }
 }

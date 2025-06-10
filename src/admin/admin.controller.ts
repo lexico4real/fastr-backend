@@ -12,13 +12,13 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { PrivilegesGuard } from 'src/auth/guards/privileges.guard';
 import { Privileges } from 'src/auth/decorators/privileges.decorator';
-import { PrivilegesConstant } from 'common/enums/privileges';
+import { AllPrivileges } from 'common/enums/privileges';
 
 @Controller('admin')
 @ApiTags('admin')
 @ApiBearerAuth('token')
 @UseGuards(AuthGuard(), PrivilegesGuard)
-@Privileges(PrivilegesConstant.CAN_VIEW_ADMIN_DASHBOARD)
+@Privileges(AllPrivileges.CAN_VIEW_ADMIN_DASHBOARD)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 

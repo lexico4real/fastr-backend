@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -21,7 +22,7 @@ import { RolesConstant } from 'common/enums/roles';
 import { AuthCredentialsDto } from './dto/auth-credential.dto';
 import { Privileges } from './decorators/privileges.decorator';
 import { PrivilegesGuard } from './guards/privileges.guard';
-import { PrivilegesConstant } from 'common/enums/privileges';
+import { AllPrivileges } from 'common/enums/privileges';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { NewPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
@@ -29,7 +30,7 @@ import { ResendVerificationDto } from './dto/resend-verification.dto';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   @UseGuards(AuthGuard())
   @Get('me')
@@ -40,12 +41,12 @@ export class AuthController {
 
   @Get('users')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_VIEW_USERS)
+  @Privileges(AllPrivileges.CAN_VIEW_USERS)
   @ApiBearerAuth('token')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
   @ApiQuery({ name: 'search', required: false })
-  getAllCustomers(
+  getAllUsers(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
     @Query('search') search: string,
@@ -57,7 +58,7 @@ export class AuthController {
   @Get('user/roles')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @ApiBearerAuth('token')
-  @Privileges(PrivilegesConstant.CAN_VIEW_ROLES)
+  @Privileges(AllPrivileges.CAN_VIEW_ROLES)
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
   @ApiQuery({ name: 'search', required: false })
@@ -71,18 +72,22 @@ export class AuthController {
   }
 
   @Get('student/verify-university-email')
-  async confirmAccountStud(@Query('token') token: string): Promise<{ message: string }> {
+  async confirmAccountStud(
+    @Query('token') token: string,
+  ): Promise<{ message: string }> {
     return this.authService.confirmAccount(token);
   }
 
-  @Get('student/verify-student-email')
-  async confirmAccountBiz(@Query('token') token: string): Promise<{ message: string }> {
+  @Get('business/verify-business-email')
+  async confirmAccountBiz(
+    @Query('token') token: string,
+  ): Promise<{ message: string }> {
     return this.authService.confirmAccount(token);
   }
 
   @Get('role/privileges')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_VIEW_PRIVILEGES)
+  @Privileges(AllPrivileges.CAN_VIEW_PRIVILEGES)
   @ApiBearerAuth('token')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
@@ -99,16 +104,14 @@ export class AuthController {
   @Get('user/role/:id')
   @UseGuards(AuthGuard(), PrivilegesGuard)
   @ApiBearerAuth('token')
-  @Privileges(PrivilegesConstant.CAN_VIEW_ROLES)
-  async getRoleById(@Param('id') id: string) {
+  @Privileges(AllPrivileges.CAN_VIEW_ROLES)
+  async getRoleById(@Param('id', ParseUUIDPipe) id: string) {
     return await this.authService.getRoleById(id);
   }
 
   @HttpCode(200)
   @Post('otp')
-  getLoginOTP(
-    @Body() authCredentialsDto: AuthCredentialsDto
-  ) {
+  getLoginOTP(@Body() authCredentialsDto: AuthCredentialsDto) {
     return this.authService.getLoginOTP(authCredentialsDto);
   }
 
@@ -118,6 +121,9 @@ export class AuthController {
     @Body() authCredentialsDto: AuthCredentialsDto,
     @Session() session?: any,
   ): Promise<{ accessToken: string }> {
+    if (authCredentialsDto.secret && authCredentialsDto.otp) {
+      return this.authService.signIn2Factor(authCredentialsDto, session);
+    }
     return this.authService.signIn(authCredentialsDto, session);
   }
 
@@ -139,32 +145,47 @@ export class AuthController {
   }
 
   @Post('resend-verification')
-  async resendVerification(@Body() resendVerificationDto: ResendVerificationDto, @Req() req: Request) {
-    return await this.authService.resendVerificationEmail(resendVerificationDto, req);
+  async resendVerification(
+    @Body() resendVerificationDto: ResendVerificationDto,
+    @Req() req: Request,
+  ) {
+    return await this.authService.resendVerificationEmail(
+      resendVerificationDto,
+      req,
+    );
   }
 
   @Post('forgot-password')
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto, @Req() req: Request) {
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+    @Req() req: Request,
+  ) {
     return await this.authService.forgotPassword(forgotPasswordDto, req);
   }
 
   @Post('reset-password')
-  async resetPassword(@Body() newPasswordDto: NewPasswordDto, @Query() resetPasswordDto: ResetPasswordDto) {
-    return await this.authService.resetPassword(resetPasswordDto, newPasswordDto);
+  async resetPassword(
+    @Body() newPasswordDto: NewPasswordDto,
+    @Query() resetPasswordDto: ResetPasswordDto,
+  ) {
+    return await this.authService.resetPassword(
+      resetPasswordDto,
+      newPasswordDto,
+    );
   }
 
   @HttpCode(200)
   @Post('otp/:admin')
   getLoginOTPAdmin(
     @Param('admin') admin: string,
-    @Body() authCredentialsDto: AuthCredentialsDto
+    @Body() authCredentialsDto: AuthCredentialsDto,
   ) {
     return this.authService.getLoginOTP(authCredentialsDto, admin);
   }
 
   @Post('user/role')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_ROLE)
+  @Privileges(AllPrivileges.CAN_CREATE_ROLE)
   @ApiBearerAuth('token')
   async createRole(@Body() accessDto: AccessDto) {
     return await this.authService.createRole(accessDto);
@@ -172,7 +193,7 @@ export class AuthController {
 
   @Post('role/privilege')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_PRIVILEGE)
+  @Privileges(AllPrivileges.CAN_CREATE_PRIVILEGE)
   @ApiBearerAuth('token')
   async createPrivilege(@Body() accessDto: AccessDto) {
     return await this.authService.createPrivilege(accessDto);
@@ -180,38 +201,50 @@ export class AuthController {
 
   @Post('assign/privileges')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_ASSIGN_PRIVILEGES)
+  @Privileges(AllPrivileges.CAN_ASSIGN_PRIVILEGES)
   @ApiBearerAuth('token')
   async assignPrivilege(@Body() assignPrivilegeDto: AssignPrivilegeDto) {
-    return await this.authService.assignPrivilege(assignPrivilegeDto)
+    return await this.authService.assignPrivilege(assignPrivilegeDto);
   }
 
   @Post('register/staff')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_STAFF)
+  @Privileges(AllPrivileges.CAN_CREATE_STAFF)
   @ApiBearerAuth('token')
-  registerStaff(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
+  registerStaff(
+    @Body() createUserDto: CreateUserDto,
+    @Req() req: Request,
+  ): Promise<void> {
     createUserDto.role = RolesConstant.BUSINESS;
     return this.authService.signUp(createUserDto, req);
   }
 
   @Post('register/admin')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_CREATE_ADMIN)
+  @Privileges(AllPrivileges.CAN_CREATE_ADMIN)
   @ApiBearerAuth('token')
-  registerAdmin(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
+  registerAdmin(
+    @Body() createUserDto: CreateUserDto,
+    @Req() req: Request,
+  ): Promise<void> {
     createUserDto.role = RolesConstant.ADMIN;
     return this.authService.signUp(createUserDto, req);
   }
 
   @Post('register/student')
-  signUpAsAStudent(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
+  signUpAsAStudent(
+    @Body() createUserDto: CreateUserDto,
+    @Req() req: Request,
+  ): Promise<void> {
     createUserDto.role = RolesConstant.STUDENT;
     return this.authService.signUp(createUserDto, req);
   }
 
   @Post('register/business')
-  signUpAsABusiness(@Body() createUserDto: CreateUserDto, @Req() req: Request): Promise<void> {
+  signUpAsABusiness(
+    @Body() createUserDto: CreateUserDto,
+    @Req() req: Request,
+  ): Promise<void> {
     createUserDto.role = RolesConstant.BUSINESS_ADMIN;
     return this.authService.signUp(createUserDto, req);
   }

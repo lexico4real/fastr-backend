@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Patch, UseGuards, Param, Req, Post, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  UseGuards,
+  Param,
+  Req,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { ProfileService } from './profile.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -6,7 +18,7 @@ import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrivilegesGuard } from 'src/auth/guards/privileges.guard';
-import { PrivilegesConstant } from 'common/enums/privileges';
+import { AllPrivileges } from 'common/enums/privileges';
 import { Privileges } from 'src/auth/decorators/privileges.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/upload/upload.service';
@@ -37,8 +49,8 @@ export class ProfileController {
 
   @Get('user/:id')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_VIEW_USER_PROFILE)
-  async getProfileById(@Param('id') id: string) {
+  @Privileges(AllPrivileges.CAN_VIEW_USER_PROFILE)
+  async getProfileById(@Param('id', ParseUUIDPipe) id: string) {
     return await this.profileService.getProfile(id);
   }
 
@@ -59,7 +71,7 @@ export class ProfileController {
   // profile privacy
   @Patch('privacy')
   @UseGuards(AuthGuard(), PrivilegesGuard)
-  @Privileges(PrivilegesConstant.CAN_UPDATE_PROFILE_PRIVACY)
+  @Privileges(AllPrivileges.CAN_UPDATE_PROFILE_PRIVACY)
   async updateProfilePrivacy(
     @GetUser() user: any,
     @Body() updateProfileDto: UpdateProfileDto,

@@ -75,7 +75,7 @@ export class AnalyticsService {
   async getAdminSummary() {
     try {
       this.logger.log('AnalyticsService', 'info', 'Fetching admin summary', 'analytics');
-      
+
       const adminRole = await this.userRoleRepository.findOne({
         where: { name: RolesConstant.BUSINESS_ADMIN },
       });

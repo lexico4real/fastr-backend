@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Salary Payment Processed</title>
+</head>
+<body style="font-family: 'Segoe UI', sans-serif; background-color: #f3f2ef; margin: 0; padding: 0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding: 40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px;">
+          <tr>
+            <td style="background-color: #0a66c2; padding: 20px; color: #fff; font-size: 18px;">
+              Salary Payment Confirmation
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <p style="font-size: 15px; color: #333;">
+                The payment for <strong>{{studentEmail}}</strong> has been successfully processed.
+              </p>
+
+              <table cellpadding="8" cellspacing="0" style="font-size: 14px; color: #333;">
+                <tr><td><strong>Invoice ID:</strong></td><td>{{invoiceId}}</td></tr>
+                <tr><td><strong>Payment Date:</strong></td><td>{{paymentDate}}</td></tr>
+                <tr><td><strong>Reference No:</strong></td><td>{{reference}}</td></tr>
+              </table>
+
+              <p style="margin-top: 20px;">This is a confirmation for your internal records.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f3f2ef; padding: 20px; font-size: 12px; text-align: center; color: #777;">
+              &copy; {{year}} {{companyName}}. All rights reserved.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

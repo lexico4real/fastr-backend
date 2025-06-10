@@ -10,6 +10,7 @@ import {
   HttpStatus,
   ForbiddenException,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -32,9 +33,13 @@ import { CacheService } from 'src/cache/cache.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { NewPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { RolesConstant } from 'common/enums/roles';
+import { isUkAcademicEmail } from 'common/utils/custom-validations/university-email';
+import { isBusinessEmail } from 'common/utils/custom-validations/business-email';
+import Logger from 'config/logger';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger();
   constructor(
     @InjectRepository(UserRepository)
     private usersRepository: UserRepository,
@@ -45,53 +50,109 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly otpService: OtpService,
-    private readonly cacheService: CacheService
-  ) { }
+    private readonly cacheService: CacheService,
+  ) {}
 
   async signUp(createUserDto: CreateUserDto, req: Request): Promise<void> {
-    const { role } = createUserDto;
-    const roleData = await this.userRoleRepository.getRoleByName(role);
+    try {
+      const { role, email } = createUserDto;
 
-    if (role === RolesConstant.STUDENT) {
-      throw new BadRequestException('Only UK university emails ending in .ac.uk are allowed.');
-    } else if (
-      [RolesConstant.ADMIN, RolesConstant.BUSINESS, RolesConstant.BUSINESS_ADMIN].includes(role)
-    ) {
-      throw new BadRequestException('Public email domains are not allowed. Please use a business email address.');
+      const userInDB = await this.usersRepository.findOne({
+        where: { email },
+      });
+      if (userInDB) {
+        throw new ConflictException('Account with this email already exists');
+      }
+
+      const roleData = await this.userRoleRepository.getRoleByName(role);
+      if (!roleData) {
+        throw new BadRequestException('Invalid role specified.');
+      }
+
+      if (role === RolesConstant.STUDENT && !isUkAcademicEmail(email)) {
+        throw new BadRequestException(
+          'Only UK university emails ending in .ac.uk are allowed.',
+        );
+      } else if (
+        [
+          RolesConstant.ADMIN,
+          RolesConstant.BUSINESS,
+          RolesConstant.BUSINESS_ADMIN,
+        ].includes(role) &&
+        !isBusinessEmail(email)
+      ) {
+        throw new BadRequestException(
+          'Public email domains are not allowed. Please use a business email address.',
+        );
+      }
+
+      const user = await this.usersRepository.registerAccount(
+        createUserDto,
+        roleData,
+      );
+
+      const token = this.generateConfirmationToken(user);
+
+      await this.sendConfirmationEmail(user.email, token, req);
+    } catch (error) {
+      this.logger.log(
+        'sign-up',
+        'error',
+        `Registration error: ${error.message}`,
+        'auth.service',
+      );
+      throw error instanceof BadRequestException
+        ? error
+        : error instanceof ConflictException
+          ? error
+          : new InternalServerErrorException(
+              'Something went wrong while creating the user account',
+            );
     }
-    const user = await this.usersRepository.registerAccount(createUserDto, roleData);
-
-    const token = this.generateConfirmationToken(user);
-
-    await this.sendConfirmationEmail(user.email, token, req);
   }
 
   async confirmAccount(token: string): Promise<{ message: string }> {
-    const payload = this.verifyConfirmationToken(token);
+    try {
+      const payload = this.verifyConfirmationToken(token);
+      if (payload) {
+        const { email } = payload;
+        const user = await this.usersRepository.getUserByEmail(email);
+        if (user?.isEmailVerified) {
+          throw new BadRequestException('Email already verified');
+        }
+      }
 
-    const result = await this.usersRepository.confirmAccount(payload)
+      const result = await this.usersRepository.confirmAccount(payload);
 
-    await this.emailService.sendMail({
-      to: result.user.email,
-      subject: 'New Account',
-      text: '',
-      html: `
-    <div style="font-family: Arial, sans-serif; color: #333;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <img src="https://via.placeholder.com/150x50?text=Company+Logo" alt="Company Logo" style="height: 50px;">
+      await this.emailService.sendMail({
+        to: result.user.email,
+        subject: 'New Account',
+        text: '',
+        html: `
+      <div style="font-family: Arial, sans-serif; color: #333;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://via.placeholder.com/150x50?text=Company+Logo" alt="Company Logo" style="height: 50px;">
+        </div>
+        <h2 style="color: #0056b3;">Welcome!</h2>
+        <p>Thank you for opening a new account with us. We're thrilled to have you on board and look forward to supporting your journey. Kindly update your profile.</p>
+        <p>If you have any questions, feel free to reach out to our support team at any time.</p>
+        <p style="margin-top: 30px;">Best regards,<br><strong>The Team</strong></p>
       </div>
-      <h2 style="color: #0056b3;">Welcome, ${result.user.profile.firstName}!</h2>
-      <p>Thank you for opening a new account with us. We're thrilled to have you on board and look forward to supporting your journey. Kindly update your profile.</p>
-      <p>If you have any questions, feel free to reach out to our support team at any time.</p>
-      <p style="margin-top: 30px;">Best regards,<br><strong>The Team</strong></p>
-    </div>
-  `,
-    });
-    delete result.user;
-    return result;
+    `,
+      });
+      delete result.user.password;
+      return result;
+    } catch (error) {
+      throw error instanceof BadRequestException
+        ? error
+        : new InternalServerErrorException('Something went wrong');
+    }
   }
 
-  async resendVerificationEmail(resendVerificationDto: ResendVerificationDto, req: Request): Promise<void> {
+  async resendVerificationEmail(
+    resendVerificationDto: ResendVerificationDto,
+    req: Request,
+  ): Promise<void> {
     const { email } = resendVerificationDto;
     const user = await this.usersRepository.getUserByEmail(email);
     if (!user) {
@@ -110,9 +171,24 @@ export class AuthService {
 
     const user = await this.usersRepository.getUserByEmail(normalizedEmail);
 
-    if (!user || (roleType && user.userRole.name !== roleType)) {
+    if (
+      !user ||
+      (roleType &&
+        user?.userRole?.name?.toLowerCase() !== roleType?.toLowerCase())
+    ) {
       throw new UnauthorizedException(
         'Wrong email/password. Please check your login credentials.',
+      );
+    }
+
+    if (
+      !(
+        user?.userRole?.name === RolesConstant.ADMIN ||
+        user?.userRole?.name === RolesConstant.SUPER_ADMIN
+      )
+    ) {
+      throw new UnauthorizedException(
+        'You are not authorized to access this endpoint. Please use the business/student login.',
       );
     }
 
@@ -134,10 +210,7 @@ export class AuthService {
 
     const { email: _email } = user;
 
-    const token = await this.otpService.generateOtp(
-      { email },
-      user,
-    );
+    const token = await this.otpService.generateOtp({ email }, user);
 
     await this.emailService.sendMail({
       to: _email,
@@ -152,10 +225,10 @@ export class AuthService {
     };
   }
 
-  async signIn(
+  async signIn2Factor(
     authCredentialsDto: AuthCredentialsDto,
     session: any,
-  ): Promise<{ accessToken: string, refreshToken: string } & User> {
+  ): Promise<{ accessToken: string; refreshToken: string } & User> {
     const { email, password, secret, otp } = authCredentialsDto;
 
     const normalizedEmail = email.toLowerCase();
@@ -168,12 +241,22 @@ export class AuthService {
       );
     }
 
+    if (
+      !(
+        user?.userRole?.name === RolesConstant.ADMIN ||
+        user?.userRole?.name === RolesConstant.SUPER_ADMIN
+      )
+    ) {
+      throw new UnauthorizedException(
+        'You are not authorized to access this endpoint. Please use the business/student login.',
+      );
+    }
+
     if (!user.isEmailVerified) {
       throw new ForbiddenException(
         'This account is yet to be confirmed. Request a confirmation email.',
       );
     }
-
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
@@ -209,13 +292,99 @@ export class AuthService {
       ...user,
     };
 
-    await this.cacheService.set(`session:${user.id}:${accessToken}`, 'active', 60 * 60 * 24);
-    await this.cacheService.set(`refresh:${user.id}:${refreshToken}`, 'active', 60 * 60 * 24 * 7);
+    await this.cacheService.set(
+      `session:${user.id}:${accessToken}`,
+      'active',
+      60 * 60 * 24,
+    );
+    await this.cacheService.set(
+      `refresh:${user.id}:${refreshToken}`,
+      'active',
+      60 * 60 * 24 * 7,
+    );
 
     return { accessToken, refreshToken, ...user };
   }
 
-  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+  async signIn(
+    authCredentialsDto: AuthCredentialsDto,
+    session: any,
+  ): Promise<{ accessToken: string; refreshToken: string } & User> {
+    const { email, password, otp } = authCredentialsDto;
+
+    const normalizedEmail = email.toLowerCase();
+
+    const user = await this.usersRepository.getUserByEmail(normalizedEmail);
+
+    if (!user) {
+      throw new UnauthorizedException(
+        'Wrong email/password. Please check your login credentials',
+      );
+    }
+
+    if (
+      user?.userRole?.name === RolesConstant.ADMIN ||
+      user?.userRole?.name === RolesConstant.SUPER_ADMIN
+    ) {
+      throw new UnauthorizedException(
+        'Admin accounts cannot log in through this endpoint. Please use the admin panel.',
+      );
+    }
+
+    if (!user.isEmailVerified) {
+      throw new ForbiddenException(
+        'This account is yet to be confirmed. Request a confirmation email.',
+      );
+    }
+
+    if (!user.isEmailVerified) {
+      throw new ForbiddenException(
+        'This account is yet to be confirmed. Request a confirmation email.',
+      );
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException(
+        'Wrong email/password. Please check your login credentials',
+      );
+    }
+
+    const payload: JwtPayload = {
+      email: normalizedEmail,
+      role: user.userRole,
+    };
+
+    const accessToken: string = await this.jwtService.sign(payload);
+
+    const refreshToken: string = await this.jwtService.sign(payload, {
+      expiresIn: '7d',
+    });
+
+    delete user.password;
+
+    session.currentUser = {
+      ...user,
+    };
+
+    await this.cacheService.set(
+      `session:${user.id}:${accessToken}`,
+      'active',
+      60 * 60 * 24,
+    );
+    await this.cacheService.set(
+      `refresh:${user.id}:${refreshToken}`,
+      'active',
+      60 * 60 * 24 * 7,
+    );
+
+    return { accessToken, refreshToken, ...user };
+  }
+
+  async refreshAccessToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string }> {
     let payload: JwtPayload;
 
     try {
@@ -229,9 +398,13 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const isValid = await this.cacheService.get(`refresh:${user.id}:${refreshToken}`);
+    const isValid = await this.cacheService.get(
+      `refresh:${user.id}:${refreshToken}`,
+    );
     if (isValid !== 'active') {
-      throw new UnauthorizedException('Refresh token is invalid or has been revoked');
+      throw new UnauthorizedException(
+        'Refresh token is invalid or has been revoked',
+      );
     }
 
     const newAccessToken = this.jwtService.sign(
@@ -268,7 +441,11 @@ export class AuthService {
 
     const resetToken = uuidv4();
 
-    await this.cacheService.set(`reset-password:${user.id}`, resetToken, 60 * 15);
+    await this.cacheService.set(
+      `reset-password:${user.id}`,
+      resetToken,
+      60 * 15,
+    );
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const resetLink = `${baseUrl}/api/v1/auth/reset-password?token=${resetToken}&userId=${user.id}`;
@@ -286,21 +463,24 @@ export class AuthService {
           <p>If you did not request this, please ignore this email.</p>
         </body>
       </html>
-      `
+      `;
 
     await this.emailService.sendMail({
       to: user.email,
       subject: 'Password Reset',
       text: '',
       html,
-    })
+    });
 
     return {
       message: 'Password reset link has been sent to your email',
     };
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto, newPasswordDto: NewPasswordDto) {
+  async resetPassword(
+    resetPasswordDto: ResetPasswordDto,
+    newPasswordDto: NewPasswordDto,
+  ) {
     const { userId, token } = resetPasswordDto;
     const { newPassword } = newPasswordDto;
 
@@ -364,7 +544,12 @@ export class AuthService {
     search: string,
     @Req() req: Request,
   ) {
-    return await this.userRoleRepository.getAllRoles(page, perPage, search, req);
+    return await this.userRoleRepository.getAllRoles(
+      page,
+      perPage,
+      search,
+      req,
+    );
   }
 
   async getRoleById(id: string) {
@@ -384,7 +569,12 @@ export class AuthService {
     search: string,
     @Req() req: Request,
   ) {
-    return await this.userPrivilegeRepository.getAllPrivileges(page, perPage, search, req);
+    return await this.userPrivilegeRepository.getAllPrivileges(
+      page,
+      perPage,
+      search,
+      req,
+    );
   }
 
   verifyJwt(token: string) {
@@ -393,7 +583,7 @@ export class AuthService {
 
   async findUserById(id: string): Promise<User> {
     if (!isUUID(id)) {
-      throw new BadRequestException('This is not a valid ID')
+      throw new BadRequestException('This is not a valid ID');
     }
     return await this.usersRepository.findUserById(id);
   }
@@ -416,9 +606,19 @@ export class AuthService {
     });
   }
 
-  private async sendConfirmationEmail(email: string, token: string, req: Request): Promise<void> {
+  private async sendConfirmationEmail(
+    email: string,
+    token: string,
+    req: Request,
+  ): Promise<void> {
+    let param: string;
+    if (!isUkAcademicEmail(email)) {
+      param = 'verify-business-email';
+    } else {
+      param = 'verify-university-email';
+    }
     const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const confirmationUrl = `${baseUrl}/api/v1/auth/student/confirm?token=${token}`;
+    const confirmationUrl = `${baseUrl}/api/v1/auth/student/${param}?token=${token}`;
 
     await this.emailService.sendMail({
       to: email,
@@ -429,7 +629,7 @@ export class AuthService {
         <p>Please click the link below to confirm your account:</p>
         <a href="${confirmationUrl}">${confirmationUrl}</a>
       `,
-    })
+    });
   }
 
   async assignPrivilege(assignPrivilegeDto: AssignPrivilegeDto) {
@@ -443,23 +643,22 @@ export class AuthService {
       let availablePrivs = [];
       let unAvailablePrivs = [];
       privilegeIds.forEach(async (id) => {
-        const privilege = await this.userPrivilegeRepository.findOne({ where: { id } });
+        const privilege = await this.userPrivilegeRepository.findOne({
+          where: { id },
+        });
         if (privilege) {
           availablePrivs.push(privilege);
         } else {
           unAvailablePrivs.push(privilege);
         }
-      })
+      });
 
       if (role) {
         role.userPrivileges = availablePrivs;
         await this.userRoleRepository.save(role);
       } else {
-
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   async getMyProfile(userId: string) {

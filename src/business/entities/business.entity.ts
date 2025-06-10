@@ -2,12 +2,16 @@ import { IdVerificationStatus } from 'common/enums/id-verification-status';
 import { User } from 'src/auth/entities/user.entity';
 import { BaseEntity } from 'src/base.enttity';
 import { Job } from 'src/job/entities/job.entity';
+import { Profile } from 'src/profile/entities/profile.entity';
 import { Entity, Column, OneToMany } from 'typeorm';
 
 @Entity('businesses')
 export class Business extends BaseEntity {
   @Column()
   businessName: string;
+
+  @Column({ nullable: true })
+  businessDescription?: string;
 
   @Column({ unique: true })
   registrationNumber: string;
@@ -22,9 +26,14 @@ export class Business extends BaseEntity {
   })
   verificationStatus: IdVerificationStatus;
 
-  @OneToMany(() => User, user => user.business)
+  @OneToMany(() => User, (user) => user.business)
   staff: User[];
 
-  @OneToMany(() => Job, job => job.business)
+  @OneToMany(() => Job, (job) => job.business)
   jobs: Job[];
+
+  @OneToMany(() => Profile, (profile) => profile.business, {
+    cascade: ['remove'],
+  })
+  profiles: Profile[];
 }

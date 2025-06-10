@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException, Req, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  Req,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
@@ -20,21 +26,43 @@ export class JobService {
     private jobRepository: JobRepository,
     private readonly emailService: EmailService,
     private readonly otpService: OtpService,
-    private readonly cacheService: CacheService
-  ) { }
+    private readonly cacheService: CacheService,
+  ) {}
 
   async getAllJobs(
     page: number,
     perPage: number,
     search: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     try {
-      this.logger.log('JobService', 'info', 'Fetching all jobs', 'job-service');
-      return await this.jobRepository.getAllJobs(page, perPage, search, req);
+      const cacheKey = `explore-jobs:${page}:${perPage}:${search}`;
+      const cachedJobs = await this.cacheService.get(cacheKey);
+      if (cachedJobs) {
+        return JSON.parse(cachedJobs);
+      }
+      if (search && typeof search !== 'string') {
+        throw new BadRequestException('Invalid search parameter');
+      }
+      const jobs = await this.jobRepository.getAllJobs(
+        page,
+        perPage,
+        search,
+        req,
+      );
+      await this.cacheService.set(cacheKey, JSON.stringify(jobs), 3600);
+      return jobs;
     } catch (error) {
-      this.logger.log('JobService', 'error', `Failed to fetch jobs: ${error.message}`, 'job-service');
-      throw new InternalServerErrorException('Failed to fetch jobs');
+      this.logger.log(
+        'JobService',
+        'error',
+        `Failed to fetch jobs: ${error.message}`,
+        'job-service',
+      );
+      throw error instanceof BadRequestException ||
+        error instanceof NotFoundException
+        ? error
+        : new InternalServerErrorException('Failed to fetch jobs');
     }
   }
 
@@ -44,7 +72,12 @@ export class JobService {
       throw new BadRequestException('Invalid Job ID');
     }
     try {
-      this.logger.log('JobService', 'info', `Fetching job by ID: ${jobId}`, 'job-service');
+      this.logger.log(
+        'JobService',
+        'info',
+        `Fetching job by ID: ${jobId}`,
+        'job-service',
+      );
       const job = await this.jobRepository.getJobById(jobId);
       if (!job) {
         this.logger.log('JobService', 'warn', 'Job not found', 'job-service');
@@ -52,8 +85,14 @@ export class JobService {
       }
       return job;
     } catch (error) {
-      this.logger.log('JobService', 'error', `Failed to fetch job by ID: ${error.message}`, 'job-service');
-      throw error instanceof BadRequestException || error instanceof NotFoundException
+      this.logger.log(
+        'JobService',
+        'error',
+        `Failed to fetch job by ID: ${error.message}`,
+        'job-service',
+      );
+      throw error instanceof BadRequestException ||
+        error instanceof NotFoundException
         ? error
         : new InternalServerErrorException('Failed to fetch job by ID');
     }
@@ -61,10 +100,10 @@ export class JobService {
 
   async createJob(user: any, createJobDto: CreateJobDto): Promise<Job> {
     try {
-      this.logger.log('JobService', 'info', `Creating job for user: ${user.id}`, 'job-service');
+      console.log('PROFILE', user.profile);
       const job = this.jobRepository.create({
         ...createJobDto,
-        businessId: user.id,
+        businessId: user?.profile?.businessId,
       });
       const result = await this.jobRepository.createJob(job);
 
@@ -85,9 +124,17 @@ export class JobService {
         text: '',
         html,
       });
+      const pattern = 'explore-jobs:';
+      await this.cacheService.deleteByPattern(pattern);
       return result;
     } catch (error) {
-      this.logger.log('JobService', 'error', `Failed to create job: ${error.message}`, 'job-service');
+      console.log(error);
+      this.logger.log(
+        'JobService',
+        'error',
+        `Failed to create job: ${error.message}`,
+        'job-service',
+      );
       throw new InternalServerErrorException('Failed to create job');
     }
   }
@@ -98,10 +145,8 @@ export class JobService {
     updateJobDto: UpdateJobDto,
   ): Promise<Job> {
     try {
-      this.logger.log('JobService', 'info', `Updating job with ID: ${jobId}`, 'job-service');
       const job = await this.getJobById(jobId);
-      if (!job || job.businessId !== user.id) {
-        this.logger.log('JobService', 'warn', 'Job not found or user not authorized', 'job-service');
+      if (!job || job.businessId !== user?.profile?.businessId) {
         throw new NotFoundException('Job not found or user not authorized');
       }
       Object.assign(job, updateJobDto);
@@ -124,9 +169,16 @@ export class JobService {
         text: '',
         html,
       });
+      const pattern = 'explore-jobs:';
+      await this.cacheService.deleteByPattern(pattern);
       return result;
     } catch (error) {
-      this.logger.log('JobService', 'error', `Failed to update job: ${error.message}`, 'job-service');
+      this.logger.log(
+        'JobService',
+        'error',
+        `Failed to update job: ${error.message}`,
+        'job-service',
+      );
       throw error instanceof NotFoundException
         ? error
         : new InternalServerErrorException('Failed to update job');
@@ -135,10 +187,20 @@ export class JobService {
 
   async deleteJob(user: any, jobId: string): Promise<void> {
     try {
-      this.logger.log('JobService', 'info', `Deleting job with ID: ${jobId}`, 'job-service');
+      this.logger.log(
+        'JobService',
+        'info',
+        `Deleting job with ID: ${jobId}`,
+        'job-service',
+      );
       const job = await this.getJobById(jobId);
       if (!job || job.businessId !== user.id) {
-        this.logger.log('JobService', 'warn', 'Job not found or user not authorized', 'job-service');
+        this.logger.log(
+          'JobService',
+          'warn',
+          'Job not found or user not authorized',
+          'job-service',
+        );
         throw new NotFoundException('Job not found or user not authorized');
       }
       await this.jobRepository.deleteJob(job);
@@ -159,41 +221,56 @@ export class JobService {
         text: '',
         html,
       });
+      const pattern = 'explore-jobs:';
+      await this.cacheService.deleteByPattern(pattern);
     } catch (error) {
-      this.logger.log('JobService', 'error', `Failed to delete job: ${error.message}`, 'job-service');
+      this.logger.log(
+        'JobService',
+        'error',
+        `Failed to delete job: ${error.message}`,
+        'job-service',
+      );
       throw error instanceof NotFoundException
         ? error
         : new InternalServerErrorException('Failed to delete job');
     }
   }
 
-  async getMyJobPostings(
-    userId: string,
-    page: number,
-    perPage: number,
-    @Req() req?: Request,
-  ) {
+  async getMyJobPostings(page: number, perPage: number, @Req() req?: Request) {
     try {
-      this.logger.log('JobService', 'info', `Fetching job postings for user: ${userId}`, 'job-service');
-      return await this.jobRepository.getMyJobPostings(userId, page, perPage, req);
+      return await this.jobRepository.getMyJobPostings(page, perPage, req);
     } catch (error) {
-      this.logger.log('JobService', 'error', `Failed to fetch job postings: ${error.message}`, 'job-service');
+      this.logger.log(
+        'JobService',
+        'error',
+        `Failed to fetch job postings: ${error.message}`,
+        'job-service',
+      );
       throw new InternalServerErrorException('Failed to fetch job postings');
     }
   }
 
   async getMyJobApplications(
-    userId: string,
     page: number,
     perPage: number,
     @Req() req?: Request,
   ) {
     try {
-      this.logger.log('JobService', 'info', `Fetching job applications for user: ${userId}`, 'job-service');
-      return await this.jobRepository.getMyJobApplications(userId, page, perPage, req);
+      return await this.jobRepository.getMyJobApplications(page, perPage, req);
     } catch (error) {
-      this.logger.log('JobService', 'error', `Failed to fetch job applications: ${error.message}`, 'job-service');
-      throw new InternalServerErrorException('Failed to fetch job applications');
+      this.logger.log(
+        'JobService',
+        'error',
+        `Failed to fetch job applications: ${error.message}`,
+        'job-service',
+      );
+      throw new InternalServerErrorException(
+        'Failed to fetch job applications',
+      );
     }
+  }
+
+  updateJobStatus(user: any, jobId: string, status: string): Promise<Job> {
+    return this.updateJob(user, jobId, { status });
   }
 }
