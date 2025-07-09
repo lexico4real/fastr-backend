@@ -50,39 +50,30 @@ export class ApplicationsService {
 
       const action = await this.applicationRepository.apply(student, job);
 
-      // send email notification applicant
-      const template = fs.readFileSync(
-        path.join(__dirname, 'job-confirmation.html'),
-        'utf8',
-      );
-
-      const renderedHtml = renderEmailTemplate(template, {
-        jobTitle: job.title,
-        companyName: job.business.businessName,
-        supportEmail: 'support@fastr.com',
-        year: new Date().getFullYear(),
-      });
-      await this.emailService.sendMail({
-        to: student.email,
-        subject: 'Application Received',
-        text: '',
-        html: renderedHtml,
-      });
       const pattern = `applications:${student.id}`;
       await this.cacheService.deleteByPattern(pattern);
+
+      this.sendConfirmationEmail(student.email, job).catch((emailError) => {
+        this.logger.log(
+          'ApplicationsService',
+          'warn',
+          emailError,
+          'email-service',
+        );
+      });
 
       return action;
     } catch (error) {
       this.logger.log(
         'ApplicationsService',
         'error',
-        error.message,
+        error,
         'application-service',
       );
       throw error instanceof NotFoundException
         ? error
         : error instanceof ForbiddenException
-          ? new ForbiddenException()
+          ? error
           : new InternalServerErrorException('Failed to apply for the job');
     }
   }
@@ -168,11 +159,7 @@ export class ApplicationsService {
     }
   }
 
-  async getMyApplications(
-    page: number,
-    perPage: number,
-    req?: Request,
-  ) {
+  async getMyApplications(page: number, perPage: number, req?: Request) {
     const studentId = req.user['id'];
     try {
       // check if data is cached
@@ -181,7 +168,7 @@ export class ApplicationsService {
         `applications:${cacheKey}`,
       );
       if (cachedApplications) {
-        return JSON.parse(cachedApplications)
+        return JSON.parse(cachedApplications);
       }
       const applications = await this.applicationRepository.getMyApplications(
         page,
@@ -206,11 +193,7 @@ export class ApplicationsService {
     }
   }
 
-  async getReceivedApplications(
-    page = 1,
-    perPage = 10,
-    req?: Request,
-  ) {
+  async getReceivedApplications(page = 1, perPage = 10, req?: Request) {
     try {
       const skip = (page - 1) * perPage;
 
@@ -246,5 +229,26 @@ export class ApplicationsService {
             'Failed to retrieve received applications',
           );
     }
+  }
+
+  private async sendConfirmationEmail(email: string, job: any) {
+    const template = fs.readFileSync(
+      path.join(__dirname, 'job-confirmation.html'),
+      'utf8',
+    );
+
+    const renderedHtml = renderEmailTemplate(template, {
+      jobTitle: job.title,
+      companyName: job.business.businessName,
+      supportEmail: 'support@fastr.com',
+      year: new Date().getFullYear(),
+    });
+
+    await this.emailService.sendMail({
+      to: email,
+      subject: 'Application Received',
+      text: '',
+      html: renderedHtml,
+    });
   }
 }

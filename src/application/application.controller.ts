@@ -52,7 +52,7 @@ export class ApplicationsController {
   }
 
   @Get('received')
-  // @Privileges(AllPrivileges.CAN_VIEW_RECEIVED_APPLICATIONS)
+  @Privileges(AllPrivileges.CAN_VIEW_RECEIVED_APPLICATIONS)
   @ApiBearerAuth('token')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })

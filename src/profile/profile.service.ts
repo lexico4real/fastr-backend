@@ -13,6 +13,7 @@ import Logger from 'config/logger';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { ProfileType } from 'common/enums/profile-type';
+import { UpdateWorkPermitDto } from './dto/update-work-permit.dto';
 
 @Injectable()
 export class ProfileService {
@@ -155,6 +156,57 @@ export class ProfileService {
         : error instanceof BadRequestException
           ? error
           : new InternalServerErrorException('Failed to update profile');
+    }
+  }
+
+  async updateWorkPermit(
+    dto: UpdateWorkPermitDto,
+  ): Promise<Profile> {
+    try {
+      const userId = dto.userId;
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['profile'],
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const profileId = user.profile?.id;
+      if (!profileId) {
+        throw new NotFoundException('Profile not found for this user');
+      }
+      const profile = await this.profileRepository.findOne({
+        where: { id: profileId },
+      });
+      if (!profile) {
+        throw new NotFoundException('Profile not found for this user');
+      }
+      profile.isWorkPermitVerified = dto.isWorkPermitVerified;
+
+      const updatedProfile = await this.profileRepository.save(profile);
+      return updatedProfile;
+    } catch (error) {
+      this.logger.log(
+        'ProfileService',
+        'error',
+        `Failed to update work permit: ${error}`,
+        'profile-service',
+      );
+
+      if (
+        error.code === '23505' ||
+        error.message.includes('duplicate key value violates unique constraint')
+      ) {
+        throw new BadRequestException('Work permit already exists for this user');
+      }
+
+      throw error instanceof NotFoundException
+        ? error
+        : error instanceof BadRequestException
+          ? error
+          : new InternalServerErrorException('Failed to update work permit');
     }
   }
 }

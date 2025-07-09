@@ -47,11 +47,6 @@ export class UpdateProfileDto {
   @IsString()
   availability?: string;
 
-  @ApiPropertyOptional({ description: 'Work permit details of the user', type: String })
-  @IsOptional()
-  @IsString()
-  workPermit?: string;
-
   @ApiPropertyOptional({ description: 'Profile photo URL of the user', type: String })
   @IsOptional()
   @IsUrl()

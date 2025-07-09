@@ -10,6 +10,7 @@ import { CreateRatingDto } from './dto/create-rating.dto';
 import { Job } from 'src/job/entities/job.entity';
 import { User } from 'src/auth/entities/user.entity';
 import Logger from 'config/logger';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class RatingService {
@@ -19,25 +20,16 @@ export class RatingService {
     @InjectRepository(Rating) private ratingRepository: Repository<Rating>,
     @InjectRepository(Job) private jobRepository: Repository<Job>,
     @InjectRepository(User) private userRepository: Repository<User>,
+    private readonly cacheService: CacheService,
   ) {}
 
   async createRating(jobId: string, raterId: string, dto: CreateRatingDto) {
+    if (raterId === dto.rateeId) {
+      throw new InternalServerErrorException('You cannot rate yourself');
+    }
     try {
-      this.logger.log(
-        'RatingService',
-        'info',
-        `Creating rating for jobId: ${jobId}, raterId: ${raterId}`,
-        'rating-service',
-      );
-
       const job = await this.jobRepository.findOne({ where: { id: jobId } });
       if (!job) {
-        this.logger.log(
-          'RatingService',
-          'error',
-          `Job not found for jobId: ${jobId}`,
-          'rating-service',
-        );
         throw new NotFoundException('Job not found');
       }
 
@@ -45,12 +37,6 @@ export class RatingService {
         where: { id: dto.rateeId },
       });
       if (!ratee) {
-        this.logger.log(
-          'RatingService',
-          'error',
-          `Ratee not found for rateeId: ${dto.rateeId}`,
-          'rating-service',
-        );
         throw new NotFoundException('Ratee not found');
       }
 
@@ -62,18 +48,13 @@ export class RatingService {
       });
 
       const savedRating = await this.ratingRepository.save(rating);
-      this.logger.log(
-        'RatingService',
-        'info',
-        `Rating created successfully for jobId: ${jobId}`,
-        'rating-service',
-      );
+      await this.cacheService.delete(`student:rating:avg:${dto.rateeId}`);
       return savedRating;
     } catch (error) {
       this.logger.log(
         'RatingService',
         'error',
-        `Failed to create rating: ${error.message}`,
+        `Failed to create rating: ${error}`,
         'rating-service',
       );
       throw error instanceof NotFoundException
@@ -83,31 +64,46 @@ export class RatingService {
   }
 
   async getRatingsForStudent(studentId: string) {
-    try {
-      this.logger.log(
-        'RatingService',
-        'info',
-        `Fetching ratings for studentId: ${studentId}`,
-        'rating-service',
-      );
+    const cacheKey = `student:rating:avg:${studentId}`;
+    const cachedAvg = await this.cacheService.get(cacheKey);
 
+    if (cachedAvg !== null && cachedAvg !== undefined) {
+      const parsed = JSON.parse(cachedAvg);
+      return {
+        averageScore: parsed.averageScore,
+        ratings: parsed.ratings,
+      };
+    }
+
+    try {
       const ratings = await this.ratingRepository.find({
         where: { rateeId: studentId },
       });
 
-      this.logger.log(
-        'RatingService',
-        'info',
-        `Fetched ${ratings.length} ratings for studentId: ${studentId}`,
-        'rating-service',
+      if (ratings.length === 0) {
+        return { averageScore: 0, ratings: [] };
+      }
+
+      const simplifiedRatings = ratings.map((rating) => ({
+        score: rating.score,
+        comment: rating.comment,
+      }));
+
+      const totalScore = ratings.reduce((sum, rating) => sum + rating.score, 0);
+      const averageScore = totalScore / ratings.length;
+
+      await this.cacheService.set(
+        cacheKey,
+        JSON.stringify({ averageScore, ratings: simplifiedRatings }),
+        300,
       );
 
-      return ratings;
+      return { averageScore, ratings: simplifiedRatings };
     } catch (error) {
       this.logger.log(
         'RatingService',
         'error',
-        `Failed to fetch ratings for studentId: ${studentId}, Error: ${error.message}`,
+        `Failed to fetch ratings for studentId: ${studentId}, Error: ${error}`,
         'rating-service',
       );
       throw new InternalServerErrorException(
@@ -118,13 +114,6 @@ export class RatingService {
 
   async getRatingsForBusiness(businessId: string) {
     try {
-      this.logger.log(
-        'RatingService',
-        'info',
-        `Fetching ratings for businessId: ${businessId}`,
-        'rating-service',
-      );
-
       const businessUsers = await this.userRepository.find({
         where: { business: { id: businessId } },
       });
@@ -133,13 +122,6 @@ export class RatingService {
       const ratings = await this.ratingRepository.find({
         where: businessUserIds.map((id) => ({ rateeId: id })),
       });
-
-      this.logger.log(
-        'RatingService',
-        'info',
-        `Fetched ${ratings.length} ratings for businessId: ${businessId}`,
-        'rating-service',
-      );
 
       return ratings;
     } catch (error) {

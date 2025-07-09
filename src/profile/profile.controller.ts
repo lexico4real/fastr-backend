@@ -22,6 +22,7 @@ import { AllPrivileges } from 'common/enums/privileges';
 import { Privileges } from 'src/auth/decorators/privileges.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/upload/upload.service';
+import { UpdateWorkPermitDto } from './dto/update-work-permit.dto';
 
 @Controller('profile')
 @ApiTags('profile')
@@ -77,5 +78,16 @@ export class ProfileController {
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.profileService.updateProfile(user.id, updateProfileDto);
+  }
+
+  @Patch('verify-work-permit')
+  @UseGuards(AuthGuard(), PrivilegesGuard)
+  @Privileges(AllPrivileges.CAN_UPDATE_WORK_PERMIT)
+  async updateWorkPermit(
+    @Body() updateWorkPermitDto: UpdateWorkPermitDto,
+  ) {
+    return this.profileService.updateWorkPermit(
+      updateWorkPermitDto,
+    );
   }
 }

@@ -1,6 +1,11 @@
 # compiled output
-/dist
-/node_modules
+dist/
+**/dist/
+
+
+# Node
+node_modules/
+**/node_modules/
 
 # Logs
 logs
@@ -11,28 +16,35 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# OS
+# OS-specific
 .DS_Store
+Thumbs.db
 
-# Tests
+# Test coverage
 /coverage
 /.nyc_output
 
 # IDEs and editors
 /.idea
-.project
 .classpath
 .c9/
 *.launch
 .settings/
 *.sublime-workspace
 
-# IDE - VSCode
-.vscode/*
+# Editor settings
+.project
+.idea/
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+*.sublime-workspace
 
-# development
+# Environment files
 .env
+.env.*
+
+# Misc
+*.tgz

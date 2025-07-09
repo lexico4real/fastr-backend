@@ -31,8 +31,8 @@ export class Profile extends BaseEntity {
   @Column({ nullable: true })
   education: string;
 
-  @Column({ nullable: true })
-  workPermit: string;
+  @Column({ default: false })
+  isWorkPermitVerified: boolean;
 
   @Column({ nullable: true })
   availability: string;
