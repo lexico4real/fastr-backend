@@ -1,5 +1,5 @@
 import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsDate, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsDate, IsIn, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateJobDto } from './create-job.dto';
 import { JobStatus } from 'common/enums/job-status';
@@ -19,6 +19,11 @@ export class UpdateJobDto extends PartialType(CreateJobDto) {
   @IsOptional()
   @IsNumber()
   salary?: number;
+
+  @ApiPropertyOptional({ description: 'Skills required for the job', type: [String] })
+  @IsOptional()
+  @IsArray()
+  requiredSkills?: string[];
 
   @ApiPropertyOptional({ description: 'The location of the job' })
   @IsOptional()

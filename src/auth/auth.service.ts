@@ -510,7 +510,7 @@ export class AuthService {
     page = 1,
     perPage = 10,
     search: string,
-    @Req() req: Request,
+    req: Request,
   ): Promise<any> {
     try {
       const skip = (page - 1) * perPage;
@@ -542,7 +542,7 @@ export class AuthService {
     page: number,
     perPage: number,
     search: string,
-    @Req() req: Request,
+    req: Request,
   ) {
     return await this.userRoleRepository.getAllRoles(
       page,
@@ -567,7 +567,7 @@ export class AuthService {
     page: number,
     perPage: number,
     search: string,
-    @Req() req: Request,
+    req: Request,
   ) {
     return await this.userPrivilegeRepository.getAllPrivileges(
       page,

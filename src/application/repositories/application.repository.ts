@@ -33,7 +33,7 @@ export class ApplicationRepository extends Repository<Application> {
   async getMyApplications(
     page = 1,
     perPage = 10,
-    @Req() req?: Request,
+    req?: Request,
   ) {
     try {
       const studentId = req.user['id'];
@@ -59,7 +59,7 @@ export class ApplicationRepository extends Repository<Application> {
     page = 1,
     perPage = 10,
     search?: string,
-    @Req() req?: Request,
+    req?: Request,
   ) {
     try {
       const skip = (page - 1) * perPage;

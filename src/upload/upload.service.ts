@@ -1,8 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
+import Logger from 'config/logger';
 
 @Injectable()
 export class UploadService {
+  private readonly logger = new Logger();
   constructor() {
     cloudinary.config({
       cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -11,7 +13,7 @@ export class UploadService {
     });
   }
 
-  async uploadImage(file: Express.Multer.File): Promise<any> {
+  async uploadImage(file: Express.Multer.File, retries = 3): Promise<any> {
     if (!file) throw new BadRequestException('File not found');
     try {
       const result = await new Promise((resolve, reject) => {
@@ -24,7 +26,18 @@ export class UploadService {
       });
       return result;
     } catch (error) {
-      throw error;
+      this.logger.log(
+        'ProfileService',
+        'error',
+        `Failed to upload profile photo: ${error}`,
+        'profile-service',
+      );
+      if (retries > 0 && error.error?.http_code == 499) {
+        console.log(`Retrying upload... Attempts left: ${retries - 1}`);
+        return this.uploadImage(file, retries - 1);
+      }
+      console.log(error);
+      throw new InternalServerErrorException(error);
     }
   }
 }

@@ -134,7 +134,7 @@ export class PaymentService {
     }
   }
 
-  async getInvoices(page = 1, perPage = 10, @Req() req?: Request) {
+  async getInvoices(page = 1, perPage = 10, req?: Request) {
     try {
       const userId = req.user['id'];
       const skip = (page - 1) * perPage;
@@ -198,7 +198,7 @@ export class PaymentService {
     }
   }
 
-  async getPaymentHistory(page = 1, perPage = 10, @Req() req?: Request) {
+  async getPaymentHistory(page = 1, perPage = 10, req?: Request) {
     try {
       const studentId = req.user['id'];
       const skip = (page - 1) * perPage;
@@ -229,7 +229,7 @@ export class PaymentService {
     }
   }
 
-  async getStudentHistory(page = 1, perPage = 10, @Req() req?: Request) {
+  async getStudentHistory(page = 1, perPage = 10, req?: Request) {
     try {
       const studentId = req.user['id'];
       const skip = (page - 1) * perPage;
@@ -253,7 +253,7 @@ export class PaymentService {
     }
   }
 
-  async getBusinessHistory(page = 1, perPage = 10, @Req() req?: Request) {
+  async getBusinessHistory(page = 1, perPage = 10, req?: Request) {
     try {
       const businessId = req.user['id'];
       const skip = (page - 1) * perPage;
@@ -280,7 +280,7 @@ export class PaymentService {
   async getAllInvoicesForBusiness(
     page = 1,
     perPage = 10,
-    @Req() req?: Request,
+    req?: Request,
   ) {
     try {
       const businessId = req.user['id'];

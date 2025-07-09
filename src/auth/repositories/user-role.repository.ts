@@ -56,7 +56,7 @@ export class UserRoleRepository extends Repository<UserRole> {
     page = 1,
     perPage = 10,
     search?: string,
-    @Req() req?: Request,
+    req?: Request,
   ) {
     try {
       const skip = (page - 1) * perPage;

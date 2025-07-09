@@ -171,7 +171,7 @@ export class ApplicationsService {
   async getMyApplications(
     page: number,
     perPage: number,
-    @Req() req?: Request,
+    req?: Request,
   ) {
     const studentId = req.user['id'];
     try {
@@ -209,7 +209,7 @@ export class ApplicationsService {
   async getReceivedApplications(
     page = 1,
     perPage = 10,
-    @Req() req?: Request,
+    req?: Request,
   ) {
     try {
       const skip = (page - 1) * perPage;

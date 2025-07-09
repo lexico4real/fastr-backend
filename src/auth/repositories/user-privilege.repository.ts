@@ -27,7 +27,7 @@ export class UserPrivilegeRepository extends Repository<UserPrivilege> {
     page = 1,
     perPage = 10,
     search?: string,
-    @Req() req?: Request,
+    req?: Request,
   ) {
     try {
       const skip = (page - 1) * perPage;

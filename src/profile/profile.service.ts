@@ -59,6 +59,11 @@ export class ProfileService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto): Promise<Profile> {
+    if (dto.phoneNumber) {
+      throw new BadRequestException(
+        'You cannot update your phone number. Kindly contact admin',
+      );
+    }
     try {
       const user = await this.userRepository.findOne({
         where: { id: userId },
@@ -78,7 +83,12 @@ export class ProfileService {
       let profile = user.profile;
 
       if (user.userRole.name !== 'STUDENT') {
-        if (dto.resumeUrl || dto.skills.length || dto.education || dto.availability) {
+        if (
+          dto.resumeUrl ||
+          dto.skills.length ||
+          dto.education ||
+          dto.availability
+        ) {
           throw new BadRequestException(
             'Only students can update resume, skills, education, or availability',
           );
@@ -97,14 +107,16 @@ export class ProfileService {
             },
           );
           dto.profilePhotoUrl = uploadResult.secure_url;
-        } catch (uploadError) {
+        } catch (error) {
           this.logger.log(
             'ProfileService',
             'error',
-            `Failed to upload profile photo: ${uploadError.message}`,
+            `Failed to upload profile photo: ${error}`,
             'profile-service',
           );
-          throw new BadRequestException('Failed to upload profile photo');
+          throw new InternalServerErrorException(
+            'Failed to upload profile photo',
+          );
         }
       }
 
@@ -123,6 +135,7 @@ export class ProfileService {
       );
       return updatedProfile;
     } catch (error) {
+      console.log(error);
       this.logger.log(
         'ProfileService',
         'error',
@@ -130,8 +143,10 @@ export class ProfileService {
         'profile-service',
       );
 
-      if (error.code === '23505' ||
-          error.message.includes('duplicate key value violates unique constraint')) {
+      if (
+        error.code === '23505' ||
+        error.message.includes('duplicate key value violates unique constraint')
+      ) {
         throw new BadRequestException('Profile already exists for this user');
       }
 

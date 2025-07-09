@@ -20,6 +20,7 @@ import { PrivilegesGuard } from 'src/auth/guards/privileges.guard';
 import { Privileges } from 'src/auth/decorators/privileges.decorator';
 import { AllPrivileges } from 'common/enums/privileges';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { JobStatus } from 'common/enums/job-status';
 
 @ApiTags('jobs')
 @Controller('jobs')
@@ -29,14 +30,43 @@ export class JobController {
   @Get('explore')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'perPage', required: false })
-  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'title', required: false })
+  @ApiQuery({ name: 'salary', required: false })
+  @ApiQuery({ name: 'location', required: false })
+  @ApiQuery({ name: 'company', required: false })
+  @ApiQuery({
+    name: 'requiredSkills',
+    required: false,
+    type: String,
+    description: 'Comma-separated required skill list',
+  })
+  @ApiQuery({ name: 'datePosted', required: false })
   async exploreJobs(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
-    @Query('search') search: string,
+    @Query('title') title: string,
+    @Query('location') location: string,
+    @Query('salary') salary: string,
+    @Query('company') company: string,
+    @Query('requiredSkills') requiredSkills: string,
+    @Query('datePosted') datePosted: string,
+    @Query('status') status: JobStatus,
     @Req() req: Request,
   ) {
-    return this.jobService.getAllJobs(page, perPage, search, req);
+    return this.jobService.getAllJobs(
+      page,
+      perPage,
+      {
+        title,
+        location,
+        salary,
+        company,
+        requiredSkills: requiredSkills?.split(',').map((skill) => skill.trim()),
+        datePosted,
+        status,
+      },
+      req,
+    );
   }
 
   @ApiBearerAuth('token')

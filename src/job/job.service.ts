@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  Req,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Request } from 'express';
@@ -16,6 +15,7 @@ import { CacheService } from 'src/cache/cache.service';
 import { Job } from './entities/job.entity';
 import { isUUID } from 'class-validator';
 import Logger from 'config/logger';
+import { JobStatus } from 'common/enums/job-status';
 
 @Injectable()
 export class JobService {
@@ -32,22 +32,27 @@ export class JobService {
   async getAllJobs(
     page: number,
     perPage: number,
-    search: string,
-    @Req() req: Request,
+    filters: {
+      title?: string;
+      salary?: string;
+      location?: string;
+      company?: string;
+      datePosted?: string;
+      requiredSkills?: string[];
+      status?: JobStatus;
+    },
+    req: Request,
   ) {
     try {
-      const cacheKey = `explore-jobs:${page}:${perPage}:${search}`;
+      const cacheKey = `explore-jobs:${page}:${perPage}:${JSON.stringify(filters)}`;
       const cachedJobs = await this.cacheService.get(cacheKey);
       if (cachedJobs) {
         return JSON.parse(cachedJobs);
       }
-      if (search && typeof search !== 'string') {
-        throw new BadRequestException('Invalid search parameter');
-      }
       const jobs = await this.jobRepository.getAllJobs(
         page,
         perPage,
-        search,
+        filters,
         req,
       );
       await this.cacheService.set(cacheKey, JSON.stringify(jobs), 3600);
@@ -100,7 +105,6 @@ export class JobService {
 
   async createJob(user: any, createJobDto: CreateJobDto): Promise<Job> {
     try {
-      console.log('PROFILE', user.profile);
       const job = this.jobRepository.create({
         ...createJobDto,
         businessId: user?.profile?.businessId,
@@ -128,7 +132,6 @@ export class JobService {
       await this.cacheService.deleteByPattern(pattern);
       return result;
     } catch (error) {
-      console.log(error);
       this.logger.log(
         'JobService',
         'error',
@@ -236,7 +239,7 @@ export class JobService {
     }
   }
 
-  async getMyJobPostings(page: number, perPage: number, @Req() req?: Request) {
+  async getMyJobPostings(page: number, perPage: number, req?: Request) {
     try {
       return await this.jobRepository.getMyJobPostings(page, perPage, req);
     } catch (error) {
@@ -250,11 +253,7 @@ export class JobService {
     }
   }
 
-  async getMyJobApplications(
-    page: number,
-    perPage: number,
-    @Req() req?: Request,
-  ) {
+  async getMyJobApplications(page: number, perPage: number, req?: Request) {
     try {
       return await this.jobRepository.getMyJobApplications(page, perPage, req);
     } catch (error) {

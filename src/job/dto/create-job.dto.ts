@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsDate } from "class-validator";
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsDate, IsArray } from "class-validator";
 
 export class CreateJobDto {
   @ApiProperty({ description: 'The title of the job' })
@@ -17,6 +17,11 @@ export class CreateJobDto {
   @IsNotEmpty()
   @IsNumber()
   salary: number;
+
+  @ApiPropertyOptional({ description: 'Skills required for the job', type: [String] })
+  @IsOptional()
+  @IsArray()
+  requiredSkills?: string[];
 
   @ApiPropertyOptional({ description: 'The location of the job', example: 'Remote' })
   @IsOptional()
