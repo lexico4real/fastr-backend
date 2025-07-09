@@ -7,7 +7,7 @@ Dockerfile
 # !package.json
 # !package-lock.json
 node_modules
-RESDME.md
+README.md
 # !src
 # !tsconfig.json
 # !tsconfig.build.json

@@ -44,7 +44,7 @@ export class RatingController {
     return this.ratingService.createRating(jobId, req.user?.['id'], dto);
   }
 
-  // @Privileges(AllPrivileges.CAN_RATE_STUDENT)
+  @Privileges(AllPrivileges.CAN_RATE_STUDENT)
   @Get('student/:studentId')
   async getStudentRatings(
     @Param('studentId', ParseUUIDPipe) studentId: string,

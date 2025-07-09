@@ -1,13 +1,15 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from 'src/base.enttity';
 import { Job } from 'src/job/entities/job.entity';
 import { User } from 'src/auth/entities/user.entity';
 
 @Entity('ratings')
 export class Rating extends BaseEntity {
+  @Index()
   @Column('int')
   score: number;
 
+  @Index()
   @Column({ nullable: true })
   comment: string;
 

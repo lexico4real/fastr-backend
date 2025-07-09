@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Rating } from './entities/rating.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateRatingDto } from './dto/create-rating.dto';
 import { Job } from 'src/job/entities/job.entity';
 import { User } from 'src/auth/entities/user.entity';
@@ -67,7 +67,7 @@ export class RatingService {
     const cacheKey = `student:rating:avg:${studentId}`;
     const cachedAvg = await this.cacheService.get(cacheKey);
 
-    if (cachedAvg !== null && cachedAvg !== undefined) {
+    if (cachedAvg) {
       const parsed = JSON.parse(cachedAvg);
       return {
         averageScore: parsed.averageScore,
@@ -78,27 +78,28 @@ export class RatingService {
     try {
       const ratings = await this.ratingRepository.find({
         where: { rateeId: studentId },
+        select: ['score', 'comment'],
       });
 
       if (ratings.length === 0) {
         return { averageScore: 0, ratings: [] };
       }
 
-      const simplifiedRatings = ratings.map((rating) => ({
+      const totalScore = ratings.reduce((sum, rating) => sum + rating.score, 0);
+      const averageScore = totalScore / ratings.length;
+
+      const formattedRatings = ratings.map((rating) => ({
         score: rating.score,
         comment: rating.comment,
       }));
 
-      const totalScore = ratings.reduce((sum, rating) => sum + rating.score, 0);
-      const averageScore = totalScore / ratings.length;
-
       await this.cacheService.set(
         cacheKey,
-        JSON.stringify({ averageScore, ratings: simplifiedRatings }),
+        JSON.stringify({ averageScore, ratings: formattedRatings }),
         300,
       );
 
-      return { averageScore, ratings: simplifiedRatings };
+      return { averageScore, ratings: formattedRatings };
     } catch (error) {
       this.logger.log(
         'RatingService',
@@ -113,22 +114,58 @@ export class RatingService {
   }
 
   async getRatingsForBusiness(businessId: string) {
+    const cacheKey = `business:rating:avg:${businessId}`;
+    const cachedAvg = await this.cacheService.get(cacheKey);
+
+    if (cachedAvg) {
+      const parsed = JSON.parse(cachedAvg);
+      return {
+        averageScore: parsed.averageScore,
+        ratings: parsed.ratings,
+      };
+    }
+
     try {
       const businessUsers = await this.userRepository.find({
         where: { business: { id: businessId } },
+        select: ['id'],
       });
 
-      const businessUserIds = businessUsers.map((u) => u.id);
+      const businessUserIds = businessUsers.map((user) => user.id);
+
+      if (businessUserIds.length === 0) {
+        return { averageScore: 0, ratings: [] };
+      }
+
       const ratings = await this.ratingRepository.find({
-        where: businessUserIds.map((id) => ({ rateeId: id })),
+        where: { rateeId: In(businessUserIds) },
+        select: ['score', 'comment'],
       });
 
-      return ratings;
+      if (ratings.length === 0) {
+        return { averageScore: 0, ratings: [] };
+      }
+
+      const totalScore = ratings.reduce((sum, rating) => sum + rating.score, 0);
+      const averageScore = totalScore / ratings.length;
+
+      const formattedRatings = ratings.map((rating) => ({
+        score: rating.score,
+        comment: rating.comment,
+      }));
+
+      await this.cacheService.set(
+        cacheKey,
+        JSON.stringify({ averageScore, ratings: formattedRatings }),
+        300,
+      );
+
+      return { averageScore, ratings: formattedRatings };
     } catch (error) {
       this.logger.log(
         'RatingService',
         'error',
-        `Failed to fetch ratings for businessId: ${businessId}, Error: ${error.message}`,
+        `Failed to fetch ratings for businessId: ${businessId}, Error: ${error}`,
         'rating-service',
       );
       throw new InternalServerErrorException(
