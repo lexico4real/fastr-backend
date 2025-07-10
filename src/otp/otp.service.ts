@@ -46,23 +46,9 @@ export class OtpService {
       const key = `${this.NODE_ENV}_${otp}_${secret}`;
       const value = await this.cacheService.get(key);
 
-      this.logger.log(
-        'OtpService',
-        'info',
-        `Validating OTP with key: ${key}`,
-        'otp-service'
-      );
-
       const { otp: savedOtp, phoneNumber } = JSON.parse(value);
       if (otp == savedOtp) {
         await this.cacheService.delete(key);
-
-        this.logger.log(
-          'OtpService',
-          'info',
-          `OTP validation successful for key: ${key}`,
-          'otp-service'
-        );
 
         return { otpIsValid: true, email: phoneNumber };
       }
@@ -70,7 +56,7 @@ export class OtpService {
       this.logger.log(
         'OtpService',
         'error',
-        `Error during OTP validation: ${e.message}`,
+        `Error during OTP validation: ${e}`,
         'otp-service'
       );
       return { otpIsValid: false, email: null };

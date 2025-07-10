@@ -1,17 +1,17 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, IsNull, LessThan, Not, Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { Job } from 'src/job/entities/job.entity';
 import * as QRCode from 'qrcode';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { OtpService } from 'src/otp/otp.service';
-import { isUUID } from 'class-validator';
 import Logger from 'config/logger';
 
 @Injectable()
@@ -27,26 +27,32 @@ export class AttendanceService {
 
   async clockIn(jobId: string, userId: string) {
     try {
+      const isClockedIn = await this.isUserClockedIn(jobId, userId);
+      if (isClockedIn) {
+        throw new BadRequestException('You are already clocked in');
+      }
+
+      const job = await this.jobRepository.findOneBy({ id: jobId });
+      if (!job) throw new NotFoundException('Job not found');
+      if (!job.isActive) throw new BadRequestException('Job is not active');
       const result = await this.attendanceRepository.save({
         job: { id: jobId },
         userId,
         clockIn: new Date(),
       });
-      this.logger.log(
-        'attendance',
-        'info',
-        `User ${userId} clocked in for job ${jobId}`,
-        'attendance-service',
-      );
       return result;
     } catch (error) {
       this.logger.log(
         'attendance',
         'error',
-        `Failed to clock in for user ${userId} and job ${jobId}: ${error.message}`,
+        `Failed to clock in for user ${userId} and job ${jobId}: ${error}`,
         'attendance-service',
       );
-      throw new BadRequestException('Failed to clock in');
+      throw error instanceof NotFoundException
+        ? error
+        : error instanceof BadRequestException
+          ? error
+          : new InternalServerErrorException('Failed to clock in');
     }
   }
 
@@ -57,25 +63,24 @@ export class AttendanceService {
       });
 
       if (!record) throw new NotFoundException('No active clock-in found');
+      if (record.clockOut) {
+        throw new BadRequestException('You have already clocked out');
+      }
       record.clockOut = new Date();
       const result = await this.attendanceRepository.save(record);
-      this.logger.log(
-        'attendance',
-        'info',
-        `User ${userId} clocked out for job ${jobId}`,
-        'attendance-service',
-      );
       return result;
     } catch (error) {
       this.logger.log(
         'attendance',
         'error',
-        `Failed to clock out for user ${userId} and job ${jobId}: ${error.message}`,
+        `Failed to clock out for user ${userId} and job ${jobId}: ${error}`,
         'attendance-service',
       );
       throw error instanceof NotFoundException
         ? error
-        : new BadRequestException('Failed to clock out');
+        : error instanceof BadRequestException
+          ? error
+          : new InternalServerErrorException('Failed to clock out');
     }
   }
 
@@ -85,16 +90,26 @@ export class AttendanceService {
     userId: string,
   ) {
     try {
+      const isClockedIn = await this.isUserClockedIn(jobId, userId);
+      if (isClockedIn) {
+        throw new BadRequestException('You are already clocked in');
+      }
+
       const { otp } = createAttendanceDto;
       const record = await this.attendanceRepository.findOne({
-        where: { job: { id: jobId }, userId, otp, clockOut: null },
+        where: {
+          job: { id: jobId },
+          userId,
+          clockInOtp: otp,
+          clockOut: IsNull(),
+        },
       });
 
-      if (!record || new Date() > record.otpExpiresAt)
-        throw new UnauthorizedException('OTP expired or invalid');
+      if (!record || new Date() > record.clockInOtpExpiresAt)
+        throw new BadRequestException('OTP expired or invalid');
 
       const { otpIsValid } = await this.otpService.validateOtp(
-        record.otpSecret,
+        record.clockInOtpSecret,
         otp,
         'CLOCK-IN',
       );
@@ -104,23 +119,17 @@ export class AttendanceService {
 
       record.clockIn = new Date();
       await this.attendanceRepository.save(record);
-      this.logger.log(
-        'attendance',
-        'info',
-        `User ${userId} clocked in via OTP for job ${jobId}`,
-        'attendance-service',
-      );
       return record;
     } catch (error) {
       this.logger.log(
         'attendance',
         'error',
-        `Failed to clock in via OTP for user ${userId} and job ${jobId}: ${error.message}`,
+        `Failed to clock in via OTP for user ${userId} and job ${jobId}: ${error}`,
         'attendance-service',
       );
-      throw error instanceof UnauthorizedException
+      throw error instanceof BadRequestException
         ? error
-        : new BadRequestException('Failed to clock in via OTP');
+        : new InternalServerErrorException('Failed to clock in via OTP');
     }
   }
 
@@ -132,31 +141,44 @@ export class AttendanceService {
     try {
       const { otp } = createAttendanceDto;
       const record = await this.attendanceRepository.findOne({
-        where: { job: { id: jobId }, userId, otp, clockOut: null },
+        where: {
+          job: { id: jobId },
+          userId,
+          clockOutOtp: otp,
+          clockOut: IsNull(),
+        },
       });
 
-      if (!record || new Date() > record.otpExpiresAt)
-        throw new UnauthorizedException('OTP expired or invalid');
+      if (!record) throw new BadRequestException('Invalid or already used OTP');
+
+      if (new Date() > record.clockOutOtpExpiresAt)
+        throw new BadRequestException('OTP expired');
+
+      if (!record.clockIn)
+        throw new BadRequestException('You must clock in before clocking out');
+
+      const { otpIsValid } = await this.otpService.validateOtp(
+        record.clockOutOtpSecret,
+        otp,
+        'CLOCK_OUT',
+      );
+
+      if (!otpIsValid) throw new BadRequestException('Invalid OTP');
 
       record.clockOut = new Date();
       const result = await this.attendanceRepository.save(record);
-      this.logger.log(
-        'attendance',
-        'info',
-        `User ${userId} clocked out via OTP for job ${jobId}`,
-        'attendance-service',
-      );
       return result;
     } catch (error) {
+      console.log({ error });
       this.logger.log(
         'attendance',
         'error',
-        `Failed to clock out via OTP for user ${userId} and job ${jobId}: ${error.message}`,
+        `Failed to clock out via OTP for user ${userId} and job ${jobId}: ${error}`,
         'attendance-service',
       );
-      throw error instanceof UnauthorizedException
+      throw error instanceof BadRequestException
         ? error
-        : new BadRequestException('Failed to clock out via OTP');
+        : new InternalServerErrorException('Failed to clock out via OTP');
     }
   }
 
@@ -171,31 +193,40 @@ export class AttendanceService {
         issuedAt: new Date().toISOString(),
       });
       const qr = await QRCode.toDataURL(qrData);
-      this.logger.log(
-        'attendance',
-        'info',
-        `Generated QR code for job ${jobId}`,
-        'attendance-service',
-      );
       return { qrCode: qr };
     } catch (error) {
       this.logger.log(
         'attendance',
         'error',
-        `Failed to generate QR code for job ${jobId}: ${error.message}`,
+        `Failed to generate QR code for job ${jobId}: ${error}`,
         'attendance-service',
       );
       throw error instanceof NotFoundException
         ? error
-        : new BadRequestException('Failed to generate QR code');
+        : error instanceof BadRequestException
+          ? error
+          : new InternalServerErrorException('Failed to generate QR code');
     }
   }
 
-  async getAttendanceOtp(jobId: string, user: any) {
+  async getAttendanceOtp(jobId: string, user: any, type: string) {
     try {
+      if (type !== 'CLOCK_IN' && type !== 'CLOCK_OUT') {
+        throw new BadRequestException(
+          'Invalid type. Must be CLOCK_IN or CLOCK_OUT',
+        );
+      }
       const job = await this.jobRepository.findOneBy({ id: jobId });
       if (!job) throw new NotFoundException('Job not found');
       if (!job.isActive) throw new BadRequestException('Job is not active');
+
+      const isClockedIn = await this.isUserClockedIn(jobId, user.id);
+      if (type === 'CLOCK_IN' && isClockedIn) {
+        throw new BadRequestException('You are already clocked in');
+      }
+      if (type === 'CLOCK_OUT' && !isClockedIn) {
+        throw new BadRequestException('You must clock in before clocking out');
+      }
 
       const token = await this.otpService.generateOtp(
         { email: user.email },
@@ -203,37 +234,81 @@ export class AttendanceService {
       );
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-      await this.attendanceRepository.delete({
+      const payload = {
         job: { id: jobId },
         userId: user.id,
-        clockOut: null,
-      });
+      };
 
-      await this.attendanceRepository.save({
-        job: { id: jobId },
-        userId: user.id,
-        otp: token?.otp,
-        otpSecret: token?.secret,
-        otpExpiresAt: expiresAt,
-      });
+      if (type === 'CLOCK_IN') {
+        await this.attendanceRepository.delete({
+          job: { id: jobId },
+          userId: user.id,
+          clockIn: IsNull(),
+          clockInOtpExpiresAt: LessThan(new Date()),
+        });
 
-      this.logger.log(
-        'attendance',
-        'info',
-        `Generated OTP for user ${user.id} and job ${jobId}`,
-        'attendance-service',
-      );
+        await this.attendanceRepository.save({
+          ...payload,
+          clockInOtp: token?.otp,
+          clockInOtpSecret: token?.secret,
+          clockInOtpExpiresAt: expiresAt,
+        });
+      } else {
+        const existingRecord = await this.attendanceRepository.findOne({
+          where: {
+            job: { id: jobId },
+            userId: user.id,
+            clockIn: Not(IsNull()),
+            clockOut: IsNull(),
+          },
+        });
+
+        if (!existingRecord) {
+          throw new BadRequestException(
+            'No active clock-in found for clock-out',
+          );
+        }
+
+        existingRecord.clockOutOtp = token?.otp;
+        existingRecord.clockOutOtpSecret = token?.secret;
+        existingRecord.clockOutOtpExpiresAt = expiresAt;
+
+        await this.attendanceRepository.save(existingRecord);
+      }
+
       return { otp: token?.otp, expiresAt };
     } catch (error) {
       this.logger.log(
         'attendance',
         'error',
-        `Failed to generate OTP for user ${user.id} and job ${jobId}: ${error.message}`,
+        `Failed to generate OTP for user ${user.id} and job ${jobId}: ${error}`,
         'attendance-service',
       );
       throw error instanceof NotFoundException
         ? error
-        : new BadRequestException('Failed to generate attendance OTP');
+        : error instanceof BadRequestException
+          ? error
+          : error instanceof UnauthorizedException
+            ? error
+            : new InternalServerErrorException(
+                'Failed to generate attendance OTP',
+              );
     }
+  }
+
+  private async isUserClockedIn(
+    jobId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const record = await this.attendanceRepository.findOne({
+      where: {
+        job: { id: jobId },
+        userId,
+        clockIn: Not(IsNull()),
+        clockOut: IsNull(),
+      },
+    });
+
+    return !!record;
   }
 }

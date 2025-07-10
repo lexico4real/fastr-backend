@@ -123,7 +123,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to process payment: ${error.message}`,
+        `Failed to process payment: ${error}`,
         'payment-service',
       );
       throw error instanceof NotFoundException
@@ -149,7 +149,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to retrieve invoices: ${error.message}`,
+        `Failed to retrieve invoices: ${error}`,
         'payment-service',
       );
       throw new InternalServerErrorException('Failed to retrieve invoices');
@@ -187,7 +187,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to retrieve invoice: ${error.message}`,
+        `Failed to retrieve invoice: ${error}`,
         'payment-service',
       );
       throw error instanceof NotFoundException
@@ -220,7 +220,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to retrieve payment history: ${error.message}`,
+        `Failed to retrieve payment history: ${error}`,
         'payment-service',
       );
       throw new InternalServerErrorException(
@@ -244,7 +244,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to retrieve student history: ${error.message}`,
+        `Failed to retrieve student history: ${error}`,
         'payment-service',
       );
       throw new InternalServerErrorException(
@@ -268,7 +268,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to retrieve business history: ${error.message}`,
+        `Failed to retrieve business history: ${error}`,
         'payment-service',
       );
       throw new InternalServerErrorException(
@@ -296,7 +296,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to retrieve all invoices for business: ${error.message}`,
+        `Failed to retrieve all invoices for business: ${error}`,
         'payment-service',
       );
       throw new InternalServerErrorException(
@@ -324,7 +324,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to mark invoice as paid: ${error.message}`,
+        `Failed to mark invoice as paid: ${error}`,
         'payment-service',
       );
       throw error instanceof NotFoundException
@@ -395,7 +395,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to create checkout session: ${error.message}`,
+        `Failed to create checkout session: ${error}`,
         'payment-service',
       );
       throw error instanceof NotFoundException
@@ -435,7 +435,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to create bulk invoices: ${error.message}`,
+        `Failed to create bulk invoices: ${error}`,
         'payment-service',
       );
       throw new InternalServerErrorException('Failed to create bulk invoices');
@@ -466,7 +466,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to process bulk payments: ${error.message}`,
+        `Failed to process bulk payments: ${error}`,
         'payment-service',
       );
       throw new InternalServerErrorException('Failed to process bulk payments');
@@ -484,7 +484,7 @@ export class PaymentService {
       this.logger.log(
         'PaymentService',
         'error',
-        `Failed to enqueue bulk invoice creation: ${error.message}`,
+        `Failed to enqueue bulk invoice creation: ${error}`,
         'payment-service',
       );
       throw new InternalServerErrorException(

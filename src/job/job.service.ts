@@ -61,7 +61,7 @@ export class JobService {
       this.logger.log(
         'JobService',
         'error',
-        `Failed to fetch jobs: ${error.message}`,
+        `Failed to fetch jobs: ${error}`,
         'job-service',
       );
       throw error instanceof BadRequestException ||
@@ -93,7 +93,7 @@ export class JobService {
       this.logger.log(
         'JobService',
         'error',
-        `Failed to fetch job by ID: ${error.message}`,
+        `Failed to fetch job by ID: ${error}`,
         'job-service',
       );
       throw error instanceof BadRequestException ||
@@ -135,7 +135,7 @@ export class JobService {
       this.logger.log(
         'JobService',
         'error',
-        `Failed to create job: ${error.message}`,
+        `Failed to create job: ${error}`,
         'job-service',
       );
       throw new InternalServerErrorException('Failed to create job');
@@ -179,7 +179,7 @@ export class JobService {
       this.logger.log(
         'JobService',
         'error',
-        `Failed to update job: ${error.message}`,
+        `Failed to update job: ${error}`,
         'job-service',
       );
       throw error instanceof NotFoundException
@@ -230,7 +230,7 @@ export class JobService {
       this.logger.log(
         'JobService',
         'error',
-        `Failed to delete job: ${error.message}`,
+        `Failed to delete job: ${error}`,
         'job-service',
       );
       throw error instanceof NotFoundException
@@ -246,7 +246,7 @@ export class JobService {
       this.logger.log(
         'JobService',
         'error',
-        `Failed to fetch job postings: ${error.message}`,
+        `Failed to fetch job postings: ${error}`,
         'job-service',
       );
       throw new InternalServerErrorException('Failed to fetch job postings');
@@ -260,7 +260,7 @@ export class JobService {
       this.logger.log(
         'JobService',
         'error',
-        `Failed to fetch job applications: ${error.message}`,
+        `Failed to fetch job applications: ${error}`,
         'job-service',
       );
       throw new InternalServerErrorException(

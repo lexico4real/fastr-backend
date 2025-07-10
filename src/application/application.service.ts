@@ -111,7 +111,7 @@ export class ApplicationsService {
       this.logger.log(
         'ApplicationsService',
         'error',
-        error.message,
+        error,
         'application-service',
       );
       throw error instanceof NotFoundException
@@ -148,7 +148,7 @@ export class ApplicationsService {
       this.logger.log(
         'ApplicationsService',
         'error',
-        error.message,
+        error,
         'application-service',
       );
       throw error instanceof NotFoundException
@@ -186,7 +186,7 @@ export class ApplicationsService {
       this.logger.log(
         'ApplicationsService',
         'error',
-        error.message,
+        error,
         'application-service',
       );
       throw new InternalServerErrorException('Failed to retrieve applications');
@@ -220,7 +220,7 @@ export class ApplicationsService {
       this.logger.log(
         'ApplicationsService',
         'error',
-        error.message,
+        error,
         'application-service',
       );
       throw error instanceof UnauthorizedException

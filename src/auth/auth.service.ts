@@ -98,7 +98,7 @@ export class AuthService {
       this.logger.log(
         'sign-up',
         'error',
-        `Registration error: ${error.message}`,
+        `Registration error: ${error}`,
         'auth.service',
       );
       throw error instanceof BadRequestException

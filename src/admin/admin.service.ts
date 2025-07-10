@@ -38,7 +38,7 @@ export class AdminService {
       this.logger.log(
         'AdminService',
         'error',
-        `Error fetching all users: ${error.message}`,
+        `Error fetching all users: ${error}`,
         'admin-service',
       );
       throw new Error('Failed to fetch users');
@@ -52,7 +52,7 @@ export class AdminService {
       this.logger.log(
         'AdminService',
         'error',
-        `Error fetching all jobs: ${error.message}`,
+        `Error fetching all jobs: ${error}`,
         'admin-service',
       );
       throw new Error('Failed to fetch jobs');
@@ -68,7 +68,7 @@ export class AdminService {
       this.logger.log(
         'AdminService',
         'error',
-        `Error fetching all transactions: ${error.message}`,
+        `Error fetching all transactions: ${error}`,
         'admin-service',
       );
       throw new Error('Failed to fetch transactions');
@@ -89,7 +89,7 @@ export class AdminService {
       this.logger.log(
         'AdminService',
         'error',
-        `Error verifying student: ${error.message}`,
+        `Error verifying student: ${error}`,
         'admin-service',
       );
       throw new Error('Failed to verify student');
@@ -106,7 +106,7 @@ export class AdminService {
       this.logger.log(
         'AdminService',
         'error',
-        `Error verifying business: ${error.message}`,
+        `Error verifying business: ${error}`,
         'admin-service',
       );
       throw new Error('Failed to verify business');
@@ -130,7 +130,7 @@ export class AdminService {
       this.logger.log(
         'AdminService',
         'error',
-        `Error updating business verification status: ${error.message}`,
+        `Error updating business verification status: ${error}`,
         'admin-service',
       );
       throw new Error('Failed to update business verification status');

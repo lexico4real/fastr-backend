@@ -50,7 +50,7 @@ export class ProfileService {
       this.logger.log(
         'ProfileService',
         'error',
-        `Failed to retrieve user profile: ${error.message}`,
+        `Failed to retrieve user profile: ${error}`,
         'profile-service',
       );
       throw error instanceof NotFoundException

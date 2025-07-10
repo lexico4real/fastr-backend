@@ -71,8 +71,9 @@ export class AttendanceController {
   @Post('jobs/:jobId/generate-otp')
   getAttendanceOtp(
     @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Body('type') type: string,
     @Req() req: Request,
   ) {
-    return this.attendanceService.getAttendanceOtp(jobId, req.user);
+    return this.attendanceService.getAttendanceOtp(jobId, req.user, type);
   }
 }
