@@ -32,13 +32,18 @@ export function generatePagination<T>(
     throw new BadRequestException('Total items cannot be negative');
   }
 
+  const queryParams = new URLSearchParams(req.query as any);
+  queryParams.set('page', String(prevPage));
+  queryParams.set('perPage', String(perPage));
+
   const baseUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
   const _baseUrl = baseUrl.includes('?') ? baseUrl.split('?')[0] : baseUrl;
-  const prevUrl = prevPage
-    ? `${_baseUrl}?page=${prevPage}&perPage=${perPage}`
-    : null;
+
+  const prevUrl = prevPage ? `${_baseUrl}?${queryParams.toString()}` : null;
+
+  queryParams.set('page', String(nextPage));
   const nextUrl = nextPage
-    ? `${_baseUrl}?page=${nextPage}&perPage=${perPage}`
+    ? `${_baseUrl}?${queryParams.toString()}`
     : null;
 
   return {

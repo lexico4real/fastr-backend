@@ -48,3 +48,6 @@ Thumbs.db
 
 # Misc
 *.tgz
+
+# config
+src/notification/config/firebase-service-account.json

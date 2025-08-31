@@ -28,6 +28,8 @@ import { mongooseConfig } from 'config/db/mongoose';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UploadModule } from './upload/upload.module';
 import { MulterModule } from '@nestjs/platform-express';
+import { NotificationModule } from './notification/notification.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -73,6 +75,8 @@ import { MulterModule } from '@nestjs/platform-express';
     AnalyticsModule,
     AdminModule,
     UploadModule,
+    NotificationModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [

@@ -50,6 +50,7 @@
     "cookie-session": "^2.1.0",
     "cron": "^4.3.0",
     "express": "^5.1.0",
+    "firebase-admin": "^13.4.0",
     "ioredis": "^5.6.1",
     "js-yaml": "^4.1.0",
     "jsontoxml": "^1.0.1",

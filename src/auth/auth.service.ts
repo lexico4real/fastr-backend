@@ -669,4 +669,12 @@ export class AuthService {
     delete user.password;
     return user;
   }
+
+  async verifyPreOnboardingCode(preOnboardingCode: string) {
+    // This verifies the pre-onboarding code saved in the redis database
+  }
+
+  async sendPreOnboardingCode(email: string) {
+    // This sends the pre-onboarding code to the user's email
+  }
 }

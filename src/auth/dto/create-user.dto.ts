@@ -2,10 +2,10 @@ import {
   IsEmail,
   IsEnum,
   IsOptional,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
-  ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AccountStatus } from 'common/enums/account-status';
@@ -48,4 +48,12 @@ export class CreateUserDto {
       'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
   })
   password: string;
+
+  @ApiPropertyOptional({
+    description: 'The ID of the referral source',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsOptional()
+  referralSourceId?: string;
 }

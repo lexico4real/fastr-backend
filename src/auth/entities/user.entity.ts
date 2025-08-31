@@ -15,6 +15,7 @@ import { Application } from 'src/application/entities/application.entity';
 import { Profile } from 'src/profile/entities/profile.entity';
 import { Business } from 'src/business/entities/business.entity';
 import { Rating } from 'src/rating/entities/rating.entity';
+import { ReferralSource } from './referral-source.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -60,4 +61,8 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Rating, (rating) => rating.ratee)
   ratingsReceived: Rating[];
+
+  @ManyToOne(() => ReferralSource, (source) => source.users, { nullable: true })
+  @JoinColumn({ name: 'referralSourceId' })
+  referralSource: ReferralSource;
 }
