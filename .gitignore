@@ -50,4 +50,4 @@ Thumbs.db
 *.tgz
 
 # config
-src/firebase/firebase-service-account.json
+config/firebase/firebase-service-account.json
